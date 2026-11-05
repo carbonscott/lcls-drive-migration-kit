@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+
+  "// _1_": "The LCLS team's Claude Code settings, as claude-lcls uses them: the template inside",
+  "// _2_": "claude/install-claude-lcls.sh in github.com/carbonscott/deploy-opencode (commit 9224681).",
+  "// _3_": "This kit's install-claude-lcls.sh writes .sandbox/claude/settings.json from it. With a SLAC",
+  "// _4_": "AI key it points apiKeyHelper at the kit's key file. On Macs whose IT policy requires a",
+  "// _5_": "sign-in it drops apiKeyHelper and every ANTHROPIC_* entry (SLAC gateway and model names).",
+  "// _6_": "permissions.defaultMode auto works only from this user-level file, not from .claude/settings.json.",
+  "// _7_": "The one-hour cache (promptCacheTtl) is measured working through the SLAC gateway, with",
+  "// _8_": "CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS set (deploy-opencode docs/claude-binary-publish.md).",
+
+  "apiKeyHelper": "set by install-claude-lcls.sh",
+
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://ai-api.slac.stanford.edu",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "us.anthropic.claude-opus-5-5[1m]",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "us.anthropic.claude-sonnet-5[1m]",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "ANTHROPIC_DEFAULT_FABLE_MODEL": "us.anthropic.claude-fable-5-1[1m]",
+    "ANTHROPIC_CUSTOM_MODEL_OPTION": "us.anthropic.claude-sonnet-4-6",
+    "ANTHROPIC_CUSTOM_MODEL_OPTION_NAME": "Sonnet 4.6",
+    "ANTHROPIC_CUSTOM_MODEL_OPTION_DESCRIPTION": "Previous Sonnet, kept selectable via the SLAC gateway",
+    "CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS": "1",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "DISABLE_AUTOUPDATER": "1"
+  },
+
+  "promptCacheTtl": "1h",
+
+  "skipWebFetchPreflight": true,
+
+  "attribution": {
+    "commit": "Generated with AI\n\nCo-Authored-By: SLAC AI",
+    "pr": ""
+  },
+
+  "permissions": {
+    "defaultMode": "auto"
+  },
+
+  "tui": "fullscreen",
+  "verbose": false,
+  "showThinkingSummaries": false,
+  "autoMemoryEnabled": false
+}

@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Moving the LCLS Ops Drive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a guide read top to bottom. A short "one minute" box, then a
+   numbered checklist where a colored tag says who acts, then lettered
+   appendices for the detail. Same family as the OLT plan page. */
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --ink: #1b2330;
+  --muted: #5a6577;
+  --rule: #d9dee6;
+  --accent: #1f5f8b;
+  --accent-soft: #e3eef6;
+  --ok: #1e7a4a;
+  --ok-soft: #e2f3ea;
+  --bad: #a83a2c;
+  --bad-soft: #f8e5e2;
+  --warn: #8a5a00;
+  --warn-soft: #fbf0d9;
+  --you: #6b3fa0;
+  --you-soft: #efe7f8;
+  --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-body: "IBM Plex Sans", -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161d; --surface: #1a2029; --ink: #e4e8ee; --muted: #9aa5b5; --rule: #2e3643;
+    --accent: #7fb6dc; --accent-soft: #1d3142; --ok: #6cc596; --ok-soft: #173326;
+    --bad: #ec8b7d; --bad-soft: #3a1f1b; --warn: #e2b55a; --warn-soft: #34290f;
+    --you: #c3a3ec; --you-soft: #2d2140;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161d; --surface: #1a2029; --ink: #e4e8ee; --muted: #9aa5b5; --rule: #2e3643;
+  --accent: #7fb6dc; --accent-soft: #1d3142; --ok: #6cc596; --ok-soft: #173326;
+  --bad: #ec8b7d; --bad-soft: #3a1f1b; --warn: #e2b55a; --warn-soft: #34290f;
+  --you: #c3a3ec; --you-soft: #2d2140;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.6; }
+main { max-width: 980px; margin: 0 auto; padding: 40px 20px 72px; display: grid; gap: 44px; }
+.prose { max-width: 68ch; }
+h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.2; text-wrap: balance; margin: 0; }
+h1 { font-size: 2.1rem; }
+h2 { font-size: 1.45rem; padding-bottom: 6px; border-bottom: 1px solid var(--rule); }
+h3 { font-size: 1.08rem; }
+h4 { font-size: 1rem; }
+p { margin: 0; }
+section { display: grid; gap: 16px; scroll-margin-top: 16px; }
+ul, ol { margin: 0; padding-left: 20px; display: grid; gap: 5px; }
+.meta { color: var(--muted); font-size: 0.92rem; }
+code, .mono { font-family: var(--font-mono); font-size: 0.85em; }
+code { background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+pre { margin: 0; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 14px 16px; overflow-x: auto; font-family: var(--font-mono); font-size: 0.84rem; line-height: 1.5; }
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.toc { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 0.92rem; }
+.box { background: var(--surface); border: 1px solid var(--rule); border-left: 4px solid var(--accent); border-radius: 8px; padding: 20px 22px; display: grid; gap: 12px; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+.fact { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 14px 16px; display: grid; gap: 4px; align-content: start; }
+.fact .k { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600; }
+.fact .v { font-weight: 600; }
+.tag { display: inline-block; font-size: 0.76rem; font-weight: 600; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+.tag.you { background: var(--you-soft); color: var(--you); }
+.tag.kit { background: var(--accent-soft); color: var(--accent); }
+.tag.uit { background: var(--warn-soft); color: var(--warn); }
+.tag.time { background: transparent; color: var(--muted); border: 1px solid var(--rule); font-weight: 500; }
+.steps { display: grid; gap: 12px; }
+.step { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 16px 18px; display: grid; grid-template-columns: 44px 1fr; gap: 6px 14px; }
+.step .n { grid-row: span 4; font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; color: var(--accent); line-height: 1.1; }
+.step .head { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; }
+.step .head h3 { margin-right: 4px; }
+.step .note { color: var(--muted); font-size: 0.92rem; }
+.table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--rule); }
+th { font-weight: 600; color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+tr:last-child td { border-bottom: none; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; font-family: var(--font-mono); font-size: 0.84rem; }
+.pill { display: inline-block; font-size: 0.76rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.appendix { display: grid; gap: 28px; }
+.appendix > div { display: grid; gap: 12px; scroll-margin-top: 16px; }
+.template { display: grid; gap: 8px; }
+.copy-btn { justify-self: start; font: inherit; font-size: 0.88rem; font-weight: 600; color: var(--accent); background: var(--accent-soft); border: 1px solid var(--rule); border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+.copy-btn:hover { border-color: var(--accent); }
+footer { color: var(--muted); font-size: 0.88rem; border-top: 1px solid var(--rule); padding-top: 16px; }
+@media (max-width: 480px) {
+  h1 { font-size: 1.7rem; }
+  .step { grid-template-columns: 1fr; }
+  .step .n { grid-row: auto; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<main>
+
+<header class="prose" style="display:grid;gap:12px">
+  <p class="meta">For the owner of the LCLS Operations folder · November 2026</p>
+  <h1>Moving the LCLS Ops drive to a shared drive</h1>
+  <p>A step-by-step guide for moving the folder out of your personal My Drive, so that no file is lost when someone leaves, and no existing link breaks. It comes with this folder: a small toolkit and an AI assistant (Claude) that do the tedious checking for you and explain each step.</p>
+  <nav class="toc" aria-label="Contents">
+    <a href="#setup">Set up (once)</a>
+    <a href="#start">Every time</a>
+    <a href="#one-minute">In one minute</a>
+    <a href="#checklist">Your checklist</a>
+    <a href="#why-move">Why move, not copy</a>
+    <a href="#kit">What the toolkit can do</a>
+    <a href="#appendix">Appendix A–I</a>
+    <a href="#references">References</a>
+  </nav>
+</header>
+
+<section id="setup">
+  <h2>Set up (once, about 10 minutes)</h2>
+  <div class="box">
+    <ol>
+      <li>Put this folder somewhere it can stay, for example in <strong>Documents</strong>, and turn on the <strong>SLAC VPN</strong>.</li>
+      <li>Open <strong>Terminal</strong>: press Cmd+Space, type <em>Terminal</em>, press Return. Type <code>cd </code> (with a space at the end), drag this folder into the Terminal window, and press Return.</li>
+      <li>Type <code>./gdm setup</code> and press Return. It downloads the tools and Claude Code into this folder, which takes a few minutes, and shows a ✓ for each part.</li>
+      <li><strong>Only if it asks for a SLAC AI key:</strong> paste the key you were given and press Return. Nothing appears on the screen while you paste; that is normal. If you don't have a key, ask the person who gave you this folder. Many SLAC Macs need no key: setup then says you will sign in when Claude first starts.</li>
+    </ol>
+    <p>Setup ends with <strong>"Setup is done"</strong>. If it stops with a ✗ instead, the message above it says why (see <a href="#appendix-f">Troubleshooting</a>); fix that and type <code>./gdm setup</code> again. Nothing is installed outside this folder.</p>
+  </div>
+</section>
+
+<section id="start">
+  <h2>Every time</h2>
+  <div class="box">
+    <ol>
+      <li>Turn on the <strong>SLAC VPN</strong>.</li>
+      <li>Open <strong>Terminal</strong>, type <code>cd </code> (with a space at the end), drag this folder into the Terminal window, and press Return.</li>
+      <li>Type <code>./gdm claude</code> and press Return.</li>
+    </ol>
+    <p>Then tell Claude what you want, in plain words. To begin, just ask <em>"Where do I start?"</em> Later, for example: <em>"Help me with step 1. My folder is &lt;link&gt;."</em>, <em>"Who owns the files that aren't mine?"</em>, <em>"Draft the UIT request."</em> Claude knows the plan below and its safety rules, runs the toolkit for you, and explains each result.</p>
+  </div>
+  <div class="facts">
+    <div class="fact"><span class="k">Claude asks when it matters</span><span class="v">Return = yes, Esc = no</span><span class="meta">routine steps run on their own after an automatic safety check; it always asks before copies and Google sign-ins, and it cannot delete or move anything</span></div>
+    <div class="fact"><span class="k">First time only</span><span class="v">Press Return twice</span><span class="meta">for the color style and the security notes; if Claude then asks you to sign in, follow its steps with your SLAC or Stanford account</span></div>
+    <div class="fact"><span class="k">To stop</span><span class="v">Type /exit</span><span class="meta">next time, <code>./gdm claude --continue</code> picks up where you left off</span></div>
+    <div class="fact"><span class="k">Keep it to yourself</span><span class="v">Don't send this folder</span><span class="meta">once set up, it holds your logins; when you are finished, <code>./gdm clean</code> removes them and the programs, and keeps your results</span></div>
+  </div>
+  <p class="prose"><strong>Only you can:</strong> approve what Claude asks to do; sign in to Google when a browser tab opens (choose your Stanford account, tick the Google Drive box, click Continue); say which file owners have left SLAC; send the UIT email; and move the folder in the Drive web page (Claude shows you how). Claude tells you when each comes up. If something goes wrong, see <a href="#appendix-f">Troubleshooting</a>; the most common fix is turning the VPN back on.</p>
+</section>
+
+<section id="one-minute">
+  <h2>In one minute</h2>
+  <div class="box">
+    <p><strong>The risk.</strong> Your folder contains files owned by other people. When a person leaves and their Google account is deleted, every file they own is deleted with it, even if it sits in your folder.</p>
+    <p><strong>The fix.</strong> Move everything into a shared drive. Files in a shared drive belong to Stanford, not to a person, so they survive anyone leaving, including you.</p>
+    <p><strong>The rule that matters.</strong> Move, do not copy. A moved file keeps its identity, so every link to it in Confluence, Jira, e-mails and other documents keeps working. A copy is a new file: old links keep pointing at the old one.</p>
+    <p><strong>The catch.</strong> You can only move files you own. For files owned by people who have left, Stanford UIT has to step in, and only while those accounts still exist. That makes the request to UIT the most urgent step.</p>
+  </div>
+  <div class="facts">
+    <div class="fact"><span class="k">Your time</span><span class="v">About 3 hours in total</span><span class="meta">spread over 1–3 weeks, mostly waiting for UIT</span></div>
+    <div class="fact"><span class="k">Who else</span><span class="v">Stanford UIT</span><span class="meta">for files owned by people who left</span></div>
+    <div class="fact"><span class="k">Links</span><span class="v">Keep working</span><span class="meta">for every file that is moved rather than copied</span></div>
+    <div class="fact"><span class="k">Risk to your files</span><span class="v">None from the toolkit</span><span class="meta">it can only read and copy; it cannot delete or move</span></div>
+  </div>
+</section>
+
+<section id="checklist">
+  <h2>Your checklist</h2>
+  <p class="prose">Tags show who acts: <span class="tag you">You</span> means a few clicks in Google Drive, <span class="tag kit">Claude</span> means ask Claude in plain words (an example request is in italics): it runs the toolkit and explains the result, <span class="tag uit">UIT</span> means Stanford's Google administrators. Steps 0 to 3 need no one's permission and can start today.</p>
+  <div class="steps">
+
+    <div class="step">
+      <div class="n">0</div>
+      <div class="head"><h3>Create the shared drive</h3><span class="tag you">You</span><span class="tag time">10 min</span></div>
+      <p>In Google Drive: <strong>Shared drives → New</strong>, name it (for example "LCLS Operations"). Add at least one more person as <strong>Manager</strong>, so the drive never depends on a single person again.</p>
+      <p class="note">Tip: add members through Google Groups (a readers group and an editors group) rather than one by one. Staff changes then become a single edit.</p>
+    </div>
+
+    <div class="step">
+      <div class="n">1</div>
+      <div class="head"><h3>Take the inventory</h3><span class="tag kit">Claude</span><span class="tag you">You</span><span class="tag time">15 min + run time</span></div>
+      <p>Ask Claude: <em>"Take the inventory of &lt;link to your LCLS Ops folder&gt;."</em> It lists every item, who owns it, and who the folders are shared with. It only reads. The first time, a browser tab opens for the Google sign-in.</p>
+      <p>Claude then shows you the owners and asks you to <strong>mark the ones who have left SLAC</strong>. Only you, or your group, can tell; the toolkit can't.</p>
+      <p class="note">Labels in the result: <code>yours</code> (you can move it), <code>same-org</code> (owned by a Stanford colleague), <code>outside-org</code> (owned by a gmail or other-lab account: can only be copied), <code>no-owner</code> (ask UIT).</p>
+    </div>
+
+    <div class="step">
+      <div class="n">2</div>
+      <div class="head"><h3>See where your files are linked from</h3><span class="tag kit">Claude</span><span class="tag time">optional</span></div>
+      <p>Ask Claude: <em>"Find the Confluence pages and Jira issues that link to these files."</em> It searches SLAC's wiki and Jira (read only) and reports which pages point where. The first time, it needs your SLAC Confluence and Jira tokens: Claude tells you exactly what to type in a second Terminal window.</p>
+      <p class="note">This matters only for files that end up copied instead of moved: it gives the exact list of pages to update. Moved files need nothing.</p>
+    </div>
+
+    <div class="step">
+      <div class="n">3</div>
+      <div class="head"><h3>Make safety copies of at-risk files</h3><span class="tag kit">Claude</span><span class="tag you">You approve</span><span class="tag time">15 min</span></div>
+      <p>Create a folder "Safety copies (do not edit)" in the new shared drive. Then ask Claude: <em>"Make safety copies of the at-risk files in &lt;Safety copies folder link&gt;."</em> It needs a second Google sign-in that allows copying (the same clicks), shows you the list first, and copies only after you say yes.</p>
+      <p class="note">Insurance while UIT works: the originals are untouched and their links still work. The copies are new files, so delete nothing and do not edit them.</p>
+    </div>
+
+    <div class="step">
+      <div class="n">4</div>
+      <div class="head"><h3>Ask UIT for help</h3><span class="tag you">You</span><span class="tag time">20 min</span></div>
+      <p>First, a 30-second test: in the Drive web page, try moving <strong>one</strong> file owned by a departed Stanford colleague into the shared drive. If Google allows it, you may need UIT for far fewer files (see <a href="#appendix-b">Appendix B</a>).</p>
+      <p>Then send the request in <a href="#appendix-d">Appendix D</a>. Ask Claude: <em>"Draft the UIT request."</em> It fills in the numbers and names and tells you which two files to attach (<code>summary.json</code> and <code>inventory.csv</code>). The key sentence: please hold deletion of these accounts until the move is done.</p>
+    </div>
+
+    <div class="step">
+      <div class="n">5</div>
+      <div class="head"><h3>Check UIT's work</h3><span class="tag uit">UIT</span><span class="tag kit">Claude</span><span class="tag time">10 min</span></div>
+      <p>When UIT reports back, ask Claude: <em>"Check UIT's work."</em> It looks up every file again and tells you which ones are now yours and which ones UIT already moved into the shared drive.</p>
+    </div>
+
+    <div class="step">
+      <div class="n">6</div>
+      <div class="head"><h3>Move the folder</h3><span class="tag you">You</span><span class="tag time">30–60 min</span></div>
+      <p>In the Drive web page, as a Manager of the shared drive, move your LCLS Ops folder into it. Click-by-click instructions, and what to do if Google refuses, are in <a href="#appendix-e">Appendix E</a>, and Claude can walk you through them.</p>
+      <p class="note">This step is manual on purpose: Google's programming interface refuses to move folders into shared drives, so no tool or AI can do it for you.</p>
+    </div>
+
+    <div class="step">
+      <div class="n">7</div>
+      <div class="head"><h3>Give people access again</h3><span class="tag you">You</span><span class="tag time">15 min</span></div>
+      <p>People who could open your files only because a folder was shared with them lose that access after the move. Ask Claude: <em>"Who needs access to the shared drive?"</em> and add the people and groups it lists as members of the shared drive. Details in <a href="#appendix-c">Appendix C</a>.</p>
+    </div>
+
+    <div class="step">
+      <div class="n">8</div>
+      <div class="head"><h3>Confirm every link and close</h3><span class="tag kit">Claude</span><span class="tag you">You</span><span class="tag time">15 min</span></div>
+      <p>Ask Claude: <em>"Check every file against &lt;shared drive link&gt;."</em> Every file should now be in the shared drive, except <code>outside-org</code> files. Send the summary to the OLT, and leave a short "This folder moved to the LCLS Operations shared drive" note in the old location.</p>
+    </div>
+
+  </div>
+</section>
+
+<section id="why-move">
+  <h2>Why move, not copy</h2>
+  <p class="prose">Every Google Drive file has a fixed ID, and every link to it contains that ID: <code>docs.google.com/document/d/<strong>1XctqdEbz…</strong>/edit</code>. We tested both approaches with real accounts and a test shared drive (full results in <a href="#appendix-a">Appendix A</a>):</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>Moved file</th><th>Copied file</th></tr></thead>
+    <tbody>
+      <tr><td>ID (and therefore every link)</td><td><span class="pill ok">same</span> old links open it in the shared drive</td><td><span class="pill bad">new</span> old links still open the old file</td></tr>
+      <tr><td>Revision history</td><td><span class="pill ok">kept</span> 3 of 3 versions</td><td><span class="pill bad">lost</span> 1 version left</td></tr>
+      <tr><td>Comments</td><td><span class="pill ok">kept</span> 1 of 1</td><td><span class="pill bad">lost</span> 0</td></tr>
+      <tr><td>"Anyone with the link" sharing</td><td><span class="pill ok">kept</span></td><td><span class="pill bad">not copied</span></td></tr>
+      <tr><td>When the old owner's account is deleted</td><td><span class="pill ok">safe</span> the file belongs to Stanford</td><td><span class="pill bad">old links die</span> nobody is sent to the copy</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="prose">Rewriting links after copying only works for the links you can find and edit. Links in other people's documents and drives, spreadsheet formulas, e-log entries, e-mails and bookmarks cannot all be found.</p>
+</section>
+
+<section id="kit">
+  <h2>What the toolkit can and cannot do</h2>
+  <p class="prose">This folder holds a small toolkit and Claude Code, an AI assistant. Everything it installs or stores stays inside the folder, and it never changes your Mac's settings. How it works is in <a href="#appendix-h">Appendix H</a>; how to run each step without Claude is in <a href="#appendix-i">Appendix I</a>.</p>
+  <div class="facts">
+    <div class="fact"><span class="k">It can</span><span class="v">Read and copy</span><span class="meta">list files, owners and sharing; make server-side copies</span></div>
+    <div class="fact"><span class="k">It cannot</span><span class="v">Delete, move, edit, share</span><span class="meta">the code for that does not exist, and requests of those kinds are refused</span></div>
+    <div class="fact"><span class="k">Downloads</span><span class="v">None</span><span class="meta">it reads names, owners and sharing, never file contents</span></div>
+    <div class="fact"><span class="k">The AI</span><span class="v">Claude, through SLAC</span><span class="meta">it goes through SLAC's AI gateway or your SLAC sign-in, always asks before copies and sign-ins, and follows the rules in CLAUDE.md</span></div>
+  </div>
+</section>
+
+<section id="appendix">
+  <h2>Appendix</h2>
+  <div class="appendix">
+
+    <div id="appendix-a">
+      <h3>A. Sandbox test results</h3>
+      <p class="prose">Run on 4 November 2026 with a Stanford account playing the folder owner, a gmail account playing a colleague who owns files in the folder, and a test shared drive. Every test item was named GDM-SANDBOX; nothing was deleted.</p>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>Test</th><th>Action</th><th>Result</th><th>Google's answer, or what was observed</th></tr></thead>
+        <tbody>
+          <tr><td class="num">T1</td><td>Folder owner copies his file into the shared drive</td><td><span class="pill warn">works, new ID</span></td><td>Copy has 1 revision and 0 comments (original: 3 and 1)</td></tr>
+          <tr><td class="num">T1b</td><td>Owner copies an "anyone with the link" doc</td><td><span class="pill warn">works, new ID</span></td><td>The copy is not link-shared: outsiders cannot open it</td></tr>
+          <tr><td class="num">T2</td><td>Owner moves his doc and a plain text file</td><td><span class="pill ok">works, same ID</span></td><td>History, comments and content unchanged</td></tr>
+          <tr><td class="num">T3</td><td>Owner moves an "anyone with the link" doc</td><td><span class="pill ok">works, same ID</span></td><td>Link sharing kept; outsiders can still open it</td></tr>
+          <tr><td class="num">T4</td><td>Move a folder through the API</td><td><span class="pill bad">refused</span></td><td><code>teamDrivesFolderMoveInNotSupported</code></td></tr>
+          <tr><td class="num">T5</td><td>Owner moves a file the colleague owns</td><td><span class="pill bad">refused</span></td><td><code>fileOwnerNotMemberOfWriterDomain</code></td></tr>
+          <tr><td class="num">T6</td><td>Owner moves a folder containing the colleague's file</td><td><span class="pill bad">refused</span></td><td><code>teamDrivesFolderMoveInNotSupported</code></td></tr>
+          <tr><td class="num">T7</td><td>Colleague, added to the shared drive, moves their own file</td><td><span class="pill ok">works, same ID</span></td><td>Only possible while the colleague is still around</td></tr>
+          <tr><td class="num">T8–T9</td><td>Ownership transferred to the folder owner, who then moves the file</td><td><span class="pill ok">works, same ID</span></td><td>What UIT can do for someone who has left</td></tr>
+          <tr><td class="num">T10</td><td>Rebuild a folder in the shared drive and move its files in</td><td><span class="pill warn">works</span></td><td>File links survive; the folder gets a new ID, so folder links do not</td></tr>
+          <tr><td class="num">T12</td><td>Colleague has left: owner tries to move, then copies</td><td><span class="pill warn">copy only</span></td><td>Move refused; safety copy works</td></tr>
+          <tr><td class="num">Access</td><td>Colleague who reached a file only through folder sharing</td><td><span class="pill bad">loses access</span></td><td>As Google documents: inherited sharing is not carried over</td></tr>
+          <tr><td class="num">T11</td><td>Move a folder in the Drive web page</td><td><span class="pill warn">to confirm</span></td><td>Does the folder keep its own link? File links inside are confirmed either way</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    <div id="appendix-b">
+      <h3>B. Google's rules and limits</h3>
+      <ul class="prose">
+        <li>Only the owner of a file can move it from My Drive into a shared drive, unless Stanford allows editors to (Google's "Allow users to migrate files to shared drives" setting). Google's refusal in test T5 named <em>different domains</em> as the reason, which suggests a Stanford editor may be allowed to move a Stanford colleague's file. Step 4's one-file test settles it.</li>
+        <li>Stanford: files owned by someone else can be moved into a shared drive only if the owner is a member of it, or if you have edit access and the owner's account is <strong>suspended</strong>.</li>
+        <li>Stanford: only Managers of a shared drive can move folders into it.</li>
+        <li>An admin, or a user given the admin privilege "Move any file or folder into shared drives", can move folders including files owned by others.</li>
+        <li>A folder move is refused if 25 or more items, or 10% or more of the items, cannot be moved; or if it has more than 100,000 items; or if the result would exceed 500,000 items or 20 levels of nested folders. Move subfolders separately in that case.</li>
+        <li>Items that cannot be moved are left out: Google puts a shortcut in the shared drive and returns the item to its owner's My Drive.</li>
+        <li>Items owned by accounts outside Stanford can never enter a Stanford shared drive.</li>
+        <li>If a departed user's account is deleted without a transfer, their files are deleted. An admin transfer does not change who has access.</li>
+      </ul>
+    </div>
+
+    <div id="appendix-c">
+      <h3>C. Who can see what after the move</h3>
+      <ul class="prose">
+        <li><strong>Members of the shared drive</strong> see everything in it, including files that were previously shared with only a few people. Keep restricted material in a separate shared drive or a folder with limited access.</li>
+        <li><strong>People a file was shared with directly</strong> keep their access to that file.</li>
+        <li><strong>"Anyone with the link"</strong> sharing is kept.</li>
+        <li><strong>People who reached files only through a shared parent folder</strong> lose access, unless they are members. That is what <code>folder-sharing.csv</code> from step 1 is for.</li>
+        <li>Editors of the moved folder become Content managers of it.</li>
+      </ul>
+    </div>
+
+    <div id="appendix-d">
+      <h3>D. Request to UIT (template)</h3>
+      <div class="template">
+<pre id="uit-template">Subject: Help moving the LCLS Operations folder into a shared drive (departed staff files)
+
+Hello UIT,
+
+I am moving the LCLS Operations folder from my My Drive into the shared drive
+"&lt;shared drive name&gt;" (I am a Manager). Some files in it are owned by staff who
+have left SLAC, so I cannot move them, and they are at risk of deletion.
+
+The attached inventory lists every item; these owners have left:
+  &lt;departed1@stanford.edu&gt;  &lt;N&gt; files
+  &lt;departed2@stanford.edu&gt;  &lt;N&gt; files
+
+Could you please do one of the following, in order of preference:
+  1. Move the folder "&lt;folder name&gt;" (&lt;folder link&gt;) into the shared drive
+     for me, including the files owned by others; or give me temporary use of the
+     admin privilege "Move any file or folder into shared drives".
+  2. Or transfer ownership of the listed files to me, so I can move them myself.
+
+Until this is done, please do not delete these accounts (an Archived User
+license, or suspension, would keep the files safe).
+
+Could you also confirm whether Stanford lets an editor move a file owned by
+another Stanford account into a shared drive ("Allow users to migrate files to
+shared drives")?
+
+Many thanks,
+&lt;your name&gt;
+
+Attachments: summary.json, inventory.csv</pre>
+        <button class="copy-btn" type="button" id="copy-uit">Copy this text</button>
+      </div>
+    </div>
+
+    <div id="appendix-e">
+      <h3>E. Moving the folder, click by click</h3>
+      <ol class="prose">
+        <li>Open <strong>drive.google.com</strong> with your Stanford account and find your LCLS Ops folder.</li>
+        <li>Right-click the folder → <strong>Organize → Move</strong> (or drag it onto the shared drive in the left-hand list).</li>
+        <li>Choose <strong>Shared drives → &lt;your shared drive&gt;</strong> → <strong>Move</strong>.</li>
+        <li>Google warns that sharing will change and that the shared drive's members will get access. That is expected: confirm.</li>
+        <li>If Google refuses because too many items cannot be moved, move the subfolders one at a time, and check the CSV Google offers to see which items stayed behind and why.</li>
+        <li>Run <code>./gdm verify</code> (step 8) afterwards.</li>
+      </ol>
+    </div>
+
+    <div id="appendix-f">
+      <h3>F. Troubleshooting</h3>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>You see</th><th>What it means and what to do</th></tr></thead>
+        <tbody>
+          <tr><td><code>WRONG ACCOUNT: you logged in as …</code></td><td>The browser picked another Google account. Run the login again and choose the account named on the command line. Nothing was saved.</td></tr>
+          <tr><td><code>The Drive permission was not granted</code></td><td>On Google's consent page, the Google Drive checkbox must be ticked. Run the login again.</td></tr>
+          <tr><td><code>(Google is busy, retrying in …s)</code></td><td>Normal. Google is rate-limiting; the toolkit waits and retries by itself.</td></tr>
+          <tr><td><code>Not logged in yet</code></td><td>Run <code>./gdm login you@stanford.edu</code> (or <code>login-writer</code> before safety copies).</td></tr>
+          <tr><td><code>First run ./gdm setup</code>, or <code>uv: command not found</code> in a search</td><td>Run <code>./gdm setup</code> once.</td></tr>
+          <tr><td><code>Claude Code is not set up in this folder yet</code>, or <code>No SLAC AI key in this folder yet</code></td><td>Type <code>./gdm setup</code> with the SLAC VPN on.</td></tr>
+          <tr><td><code>Cannot reach the SLAC AI gateway</code></td><td>The SLAC VPN is off or has dropped. Connect it and try again. If Claude stops answering in the middle of a conversation, reconnect and resume with <code>./gdm claude --continue</code>.</td></tr>
+          <tr><td><code>SLAC did not accept this key</code></td><td>The key has a typo or has been revoked. Paste it again, or ask the person who gave you this folder for a new one.</td></tr>
+          <tr><td>Claude says <code>Not logged in</code> or asks you to sign in</td><td>Type <code>/login</code> in Claude and follow its steps with your SLAC or Stanford account.</td></tr>
+          <tr><td>A message about your administrator or this Mac's policy</td><td>Type <code>./gdm setup</code> again: it adjusts to this Mac's IT settings. If the message stays, send the whole Terminal window to the person who gave you this folder.</td></tr>
+          <tr><td><code>permission denied: ./gdm</code></td><td>The folder was copied without its zip file, which drops the "can run" flag. Run <code>chmod +x gdm setup.sh</code> once, or unpack the zip file instead.</td></tr>
+          <tr><td>Google says the app is blocked or unverified</td><td>Ask whoever gave you this folder for a dedicated login file (<code>.sandbox/config/oauth-client.json</code>); see Appendix H.</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    <div id="appendix-g">
+      <h3>G. Words used here</h3>
+      <div class="table-wrap">
+      <table>
+        <tbody>
+          <tr><td><strong>My Drive</strong></td><td>Your personal space. Files there are owned by a person and die with that person's account.</td></tr>
+          <tr><td><strong>Shared drive</strong></td><td>A team space owned by Stanford. Files there survive any member leaving.</td></tr>
+          <tr><td><strong>Owner</strong></td><td>The account a My Drive file belongs to. Only the owner (or an admin) can move it into a shared drive.</td></tr>
+          <tr><td><strong>Manager / Content manager</strong></td><td>Shared drive roles. Managers can move folders in and manage members; Content managers can move files.</td></tr>
+          <tr><td><strong>File ID</strong></td><td>The long code inside every Drive link. Moving keeps it; copying creates a new one.</td></tr>
+          <tr><td><strong>UIT</strong></td><td>Stanford University IT, which administers Stanford's Google accounts.</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    <div id="appendix-h">
+      <h3>H. How the toolkit works</h3>
+      <h4>Everything stays in this folder</h4>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>What</th><th>Where, inside the folder</th></tr></thead>
+        <tbody>
+          <tr><td>Programs: uv, a private Python, rclone</td><td><code>.sandbox/bin/</code>, <code>.sandbox/python/</code> (installed by <code>./gdm setup</code>)</td></tr>
+          <tr><td>Claude Code itself</td><td><code>.sandbox/bin/claude</code> (installed by <code>./gdm install-claude</code>)</td></tr>
+          <tr><td>SLAC Confluence and Jira search skills</td><td><code>.claude/skills/</code> (shipped with the kit)</td></tr>
+          <tr><td>Claude Code's settings, history, sessions, trust decision</td><td><code>.sandbox/claude/</code></td></tr>
+          <tr><td>Claude Code's temporary files and scratch space</td><td><code>.sandbox/tmp/</code></td></tr>
+          <tr><td>Your SLAC AI key, on Macs that use one</td><td><code>.sandbox/config/slac-ai-key</code>: not in the macOS Keychain, and not in the environment of the commands Claude runs</td></tr>
+          <tr><td>Your Claude sign-in, on Macs that require one</td><td>kept by Claude Code itself, under the Mac's IT policy</td></tr>
+          <tr><td>Your Google logins and SLAC tokens</td><td><code>.sandbox/config/</code></td></tr>
+          <tr><td>Inventories, checks, copy records</td><td><code>results/</code></td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p class="prose">Only the files under <code>.sandbox/config/</code> are secret, and only your account can read them: never share the <code>.sandbox/</code> folder. Nothing is installed outside the folder, not even Claude Code. Kept outside are only your browser's normal Google sign-in and, on Macs that require one, your Claude sign-in. With a SLAC AI key, Claude's requests go only to SLAC's own AI gateway (<code>ai-api.slac.stanford.edu</code>, reachable on the SLAC network or VPN); with a sign-in, they go where the Mac's IT policy sends them. Either way, it sends no usage statistics, error reports or update checks.</p>
+      <ul class="prose">
+        <li><strong>Login:</strong> <code>./gdm login</code> opens Google's normal sign-in page. The resulting login is stored in <code>.sandbox/config/</code>, readable only by you. Do not share that folder. The read-only login uses Google's <code>drive.readonly</code> permission, so Google refuses any change made with it.</li>
+        <li><strong>Google requests it makes:</strong> list a folder's contents, get one item's details, list sharing (all reads), and copy a file (only for <code>safety-copy</code>, only with <code>--yes</code>). The code that sends requests refuses anything else. See <code>tools/drive_api.py</code>.</li>
+        <li><strong>Tools it installs:</strong> <code>./gdm setup</code> downloads <code>uv</code> (runs the Python scripts), a private copy of Python, and <code>rclone</code> (stores the login), all into <code>.sandbox/</code>. It needs only <code>curl</code> and <code>unzip</code>, which every Mac has; no developer tools.</li>
+        <li><strong>Included skills:</strong> SLAC's read-only <code>confluence-search</code> (version 5028e30) and <code>jira-search</code> (version bce9f83) ship in <code>.claude/skills/</code>, so Claude Code finds them on first start. Each has a small added <code>env.local</code> file that points it at the kit's own <code>uv</code> and Python, and keeps your SLAC tokens inside the kit (<code>.sandbox/config/confluence-search/</code> and <code>.sandbox/config/jira-search/</code>, readable only by you).</li>
+        <li><strong>Google login client:</strong> by default the toolkit signs in through rclone's shared Google client, which Google rate-limits and rclone is retiring. For reliability, someone can create a "Desktop app" OAuth client in Google Cloud Console and place its file at <code>.sandbox/config/oauth-client.json</code>; the toolkit then uses it automatically.</li>
+        <li><strong>Installing Claude Code:</strong> after installing the tools, <code>./gdm setup</code> runs <code>install-claude-lcls.sh</code> (also available alone as <code>./gdm install-claude</code>), a simplified version of the LCLS team's installer (no pass or keyswitch). It downloads the newest Claude Code release from Anthropic into <code>.sandbox/bin/</code> and checks it against Anthropic's published SHA-256, and writes <code>.sandbox/claude/settings.json</code> from <code>claude-settings.template.json</code>, the settings the LCLS team uses for claude-lcls: auto mode, a one-hour prompt cache, auto-memory off, no experimental features, no non-essential traffic or updates. Then it reads this Mac's IT policy for Claude Code ("managed settings"). If the policy requires a sign-in (<code>forceLoginMethod</code>, as on many SLAC-managed Macs), Claude Code refuses API keys, so the kit sets none and you sign in when Claude first starts. Otherwise it adds the SLAC gateway address and SLAC model names, asks for a SLAC AI key, checks it with SLAC's gateway, stores it in <code>.sandbox/config/slac-ai-key</code>, and asks Claude one short test question. <code>./gdm install-claude stable</code> installs Anthropic's "stable" channel instead, and <code>./gdm install-claude 2.1.285</code> one exact version, such as the one the LCLS team runs on S3DF.</li>
+        <li><strong>Starting Claude Code:</strong> <code>./gdm claude</code> runs only the kit's own copy of Claude Code, with its configuration folder set to <code>.sandbox/claude/</code> and its temporary folder to <code>.sandbox/tmp/</code>, and ignores any other Claude login, key, gateway or model setting on the Mac. With a SLAC AI key, it first checks that SLAC's gateway answers, and Claude Code reads the key from the kit through its <code>apiKeyHelper</code> setting. It also records this folder as trusted in the kit's own Claude configuration, so Claude does not ask "Do you trust this folder?" (that question starts on "No, exit", which is easy to get wrong).</li>
+        <li><strong>AI guardrails:</strong> <code>CLAUDE.md</code> tells an AI assistant the plan and the rules; Claude starts in auto mode, the LCLS team's default: an automatic safety check reviews each action, and Claude still always asks you before safety copies and Google logins, because <code>.claude/settings.json</code> names those, which auto mode honors. The same file blocks it from running rclone, reading the login folder, editing the toolkit or its own settings, running setup or clean, or starting Claude itself.</li>
+      </ul>
+    </div>
+
+    <div id="appendix-i">
+      <h3>I. Running the steps without Claude</h3>
+      <p class="prose">Setup is described at the top of this page. Two more commands add your SLAC tokens for checklist step 2 (Claude asks for them when needed): <code>./gdm confluence-login</code> and <code>./gdm jira-login</code>. Each shows the page where you create the token, then asks for it (hidden input). To update Claude Code later, type <code>./gdm setup</code> again (press Return to keep the key); <code>./gdm install-claude stable</code> or <code>./gdm install-claude 2.1.285</code> picks a particular version.</p>
+      <p class="prose"><strong>When you are finished:</strong> <code>./gdm clean</code> lists what setup put in this folder (programs, Claude's settings and history, your key and logins), asks you to type <code>yes</code>, and then removes it. It keeps <code>results/</code> and touches nothing in Google Drive, Confluence or Jira. Your Google account still lists the toolkit's access (named "rclone"); you can remove it at <a href="https://myaccount.google.com/connections">myaccount.google.com/connections</a>.</p>
+      <p class="prose">Every step can also be run by hand, without Claude:</p>
+      <pre>./gdm login you@stanford.edu          # read-only Google login
+./gdm inventory "&lt;folder link&gt;"        # step 1
+./gdm login-writer you@stanford.edu   # step 3: a login that can copy
+./gdm safety-copy results/inventory-…/inventory.csv "&lt;Safety copies folder link&gt;" \
+    --owners left1@stanford.edu,left2@stanford.edu --outside-org
+                                      # step 3: preview; run again with --yes to copy
+./gdm verify results/inventory-…/inventory.csv                         # step 5
+./gdm verify results/inventory-…/inventory.csv "&lt;shared drive link&gt;"  # step 8
+./gdm help                            # all commands</pre>
+    </div>
+
+  </div>
+</section>
+
+<section id="references">
+  <h2>References</h2>
+  <ol class="prose">
+    <li>Google Workspace Admin Help, <a href="https://knowledge.workspace.google.com/admin/drive/move-your-organizations-content-to-shared-drives">Move your organization's content to shared drives</a>: who can move what, the admin privilege, the 25 / 10% / 100,000 item limits, what happens to sharing.</li>
+    <li>Google Workspace Admin Help, <a href="https://knowledge.workspace.google.com/admin/getting-started/options-to-preserve-former-employee-data">Options to preserve former employee data</a>: deleted accounts lose their files unless transferred; transfers keep sharing; Archived User licenses.</li>
+    <li>Stanford UIT, <a href="https://uit.stanford.edu/service/gsuite/shareddrives/migratefiles">How to Move Files Within Google Drive</a>: Stanford's rules for owners, members, suspended accounts and folder moves.</li>
+    <li>Google for Developers, <a href="https://developers.google.com/workspace/drive/api/guides/manage-shareddrives">Manage shared drives</a>: shared drive limits (500,000 items, 100 nested levels).</li>
+    <li>rclone, <a href="https://rclone.org/drive/#making-your-own-client-id">Google Drive: making your own client ID</a>: why the shared login client is unreliable.</li>
+    <li>SLAC search skills: <a href="https://github.com/carbonscott/slac-confluence-search">slac-confluence-search</a> and <a href="https://github.com/carbonscott/slac-jira-search">slac-jira-search</a> (read-only).</li>
+    <li>Astral, <a href="https://docs.astral.sh/uv/">uv documentation</a>: the tool that runs the toolkit's Python scripts.</li>
+    <li>LCLS team, <a href="https://github.com/carbonscott/deploy-opencode/tree/main/claude">deploy-opencode/claude</a>: the full S3DF installer (<code>install-claude-lcls.sh</code>) and the settings template this kit uses, with <a href="https://github.com/carbonscott/deploy-opencode/blob/main/docs/claude-code-lcls-setup.md">Claude Code on the SLAC AI Gateway</a> (models, verification, security rules).</li>
+    <li>Anthropic, <a href="https://code.claude.com/docs/en/settings">Claude Code settings</a>: <code>apiKeyHelper</code>, <code>CLAUDE_CONFIG_DIR</code>, permission modes and the other settings the kit uses.</li>
+  </ol>
+</section>
+
+<footer>
+  <p>Companion to the OLT plan "LCLS Ops Drive Migration Plan". Toolkit and tests prepared November 2026; all test items in Google Drive are named GDM-SANDBOX.</p>
+</footer>
+
+</main>
+<script>
+(function () {
+  var button = document.getElementById("copy-uit");
+  var text = document.getElementById("uit-template");
+  if (!button || !text) return;
+  button.addEventListener("click", function () {
+    var done = function () { button.textContent = "Copied"; setTimeout(function () { button.textContent = "Copy this text"; }, 2000); };
+    var selectInstead = function () {
+      var range = document.createRange();
+      range.selectNodeContents(text);
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      button.textContent = "Selected: press Cmd+C";
+    };
+    try {
+      navigator.clipboard.writeText(text.innerText).then(done, selectInstead);
+    } catch (e) {
+      selectInstead();
+    }
+  });
+})();
+</script>
+</body>
+</html>

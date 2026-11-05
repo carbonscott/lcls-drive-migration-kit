@@ -1,0 +1,161 @@
+#!/usr/bin/env bash
+# gdm - the LCLS drive migration kit. Run ./gdm help for the commands.
+#
+# Everything this kit installs or stores stays inside this folder (.sandbox/ and
+# results/). It never changes your Mac's settings or your other tools.
+set -euo pipefail
+
+KIT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SANDBOX="$KIT/.sandbox"
+export GDM_SANDBOX="$SANDBOX"
+export PATH="$SANDBOX/bin:$PATH"
+export UV_CACHE_DIR="$SANDBOX/cache/uv"
+export UV_PYTHON_INSTALL_DIR="$SANDBOX/python"
+export UV_PYTHON_PREFERENCE=only-managed   # always the kit's own Python
+export UV_NO_CONFIG=1                       # ignore any uv settings elsewhere on this Mac
+export RCLONE_CONFIG="$SANDBOX/config/rclone/rclone.conf"
+# SLAC Confluence / Jira tokens: kept inside the kit, not in ~/.config
+export CONFLUENCE_TOKEN_FILE="$SANDBOX/config/confluence-search/token"
+export JIRA_TOKEN_FILE="$SANDBOX/config/jira-search/token"
+# With a SLAC AI key, Claude Code talks only to SLAC's own AI gateway (needs the
+# SLAC network or VPN). On Macs whose IT settings require a sign-in instead,
+# Claude Code uses that sign-in (see install-claude-lcls.sh).
+export GDM_GATEWAY="https://ai-api.slac.stanford.edu"
+cd "$KIT"
+
+need_setup() {
+  if [ ! -x "$SANDBOX/bin/uv" ] || [ ! -x "$SANDBOX/bin/rclone" ]; then
+    echo "First run ./gdm setup" >&2
+    exit 1
+  fi
+}
+
+run_tool() {   # run one of the Python tools with the sandbox's uv
+  need_setup
+  local tool="$1"; shift
+  uv run --quiet --script "tools/$tool" "$@"
+}
+
+gateway_reachable() {   # any answer from the SLAC AI gateway (even "no key") means the VPN is up
+  local code
+  code="$(curl -q -s -o /dev/null -m 10 -w '%{http_code}' "$GDM_GATEWAY/v1/models")" || code=000
+  [ "$code" != 000 ]
+}
+
+trust_kit_folder() {   # record that this folder is trusted, so Claude does not ask
+  # (its "trust this folder?" question starts on "No, exit", which is easy to get wrong)
+  uv run --quiet --no-project python "$KIT/tools/trust_folder.py" \
+    "$SANDBOX/claude/.claude.json" "$KIT"
+}
+
+launch_claude() {   # start the kit's Claude Code with everything kept inside this folder
+  need_setup
+  if [ ! -x "$SANDBOX/bin/claude" ] || [ ! -s "$SANDBOX/claude/settings.json" ]; then
+    echo "Claude Code is not set up in this folder yet. Run:  ./gdm setup" >&2
+    exit 1
+  fi
+  # With a SLAC AI key (settings use apiKeyHelper), check the key and the VPN first
+  if grep -q '"apiKeyHelper"' "$SANDBOX/claude/settings.json"; then
+    if [ ! -s "$SANDBOX/config/slac-ai-key" ]; then
+      echo "No SLAC AI key in this folder yet. Run:  ./gdm setup" >&2
+      exit 1
+    fi
+    if ! gateway_reachable; then
+      echo "Cannot reach the SLAC AI gateway ($GDM_GATEWAY)." >&2
+      echo "Connect to the SLAC VPN, then try again." >&2
+      exit 1
+    fi
+  fi
+  trust_kit_folder
+  # Ignore any Claude login, key, gateway or model set elsewhere on this Mac:
+  # the kit's .sandbox/claude/settings.json decides
+  for name in $(compgen -e); do
+    case "$name" in ANTHROPIC_*|CLAUDE_CODE_*) unset "$name" ;; esac
+  done
+  # Claude Code's settings, history, sessions and trust decisions live in the kit
+  export CLAUDE_CONFIG_DIR="$SANDBOX/claude"
+  # ...and so do its temporary files, scratchpad and the shells it starts
+  mkdir -p "$SANDBOX/tmp"
+  export CLAUDE_CODE_TMPDIR="$SANDBOX/tmp" TMPDIR="$SANDBOX/tmp"
+  # No telemetry, error reports, feedback or auto-updates: only the API calls leave
+  export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
+  # Only the kit's own copy, never another Claude Code on this Mac
+  exec "$SANDBOX/bin/claude" "$@"
+}
+
+clean_kit() {   # remove everything setup installed or stored (.sandbox/); keep results/
+  # A person runs this in Terminal, never Claude (the kit's Claude is also blocked
+  # by .claude/settings.json)
+  if [ -n "${CLAUDECODE:-}" ]; then
+    echo "Type ./gdm clean yourself in Terminal, not from inside Claude." >&2
+    exit 1
+  fi
+  # Only ever this kit's own .sandbox folder
+  if [ ! -f "$KIT/START-HERE.html" ] || [ ! -f "$KIT/install-claude-lcls.sh" ]; then
+    echo "This does not look like the kit folder. Nothing removed." >&2
+    exit 1
+  fi
+  if [ ! -e "$SANDBOX" ] && [ ! -L "$SANDBOX" ]; then
+    echo "Nothing to clean: setup has not been run in this folder."
+    exit 0
+  fi
+  echo "This removes everything setup put in this folder ($(du -sh "$SANDBOX" 2>/dev/null | cut -f1)):"
+  echo "  - the programs: Claude Code, Python, uv, rclone"
+  echo "  - Claude's settings and conversation history"
+  echo "  - your SLAC AI key, Google logins and SLAC tokens"
+  echo "It keeps results/ (the record of the migration) and the kit's own files."
+  echo "Nothing in Google Drive, Confluence or Jira is touched."
+  printf 'Type yes to remove them: '
+  IFS= read -r answer || answer=""
+  if [ "$answer" != "yes" ]; then
+    echo "Nothing removed."
+    exit 0
+  fi
+  rm -rf "$SANDBOX"   # removes a link itself, never what it points to
+  echo "Removed. To use the kit again, type ./gdm setup."
+}
+
+usage() {
+  cat <<'EOF'
+LCLS drive migration kit
+
+  ./gdm setup                          one time: install the tools and Claude Code into
+                                       this folder (run again to update Claude Code)
+  ./gdm login YOU@stanford.edu         log in READ-ONLY (Google blocks any change)
+  ./gdm inventory "FOLDER LINK"        step 1: list every item and its owner
+  ./gdm verify INVENTORY.csv "SHARED DRIVE LINK"
+                                       steps 5 and 8: check every old link still works
+  ./gdm login-writer YOU@stanford.edu  only needed for safety copies
+  ./gdm safety-copy INVENTORY.csv "DESTINATION FOLDER LINK" --owners a@stanford.edu [--yes]
+                                       step 3: copy at-risk files (preview unless --yes)
+  ./gdm confluence-login               register your SLAC Confluence token (step 2)
+  ./gdm jira-login                     register your SLAC Jira token (step 2)
+
+  ./gdm claude                         start Claude Code for this folder (SLAC VPN on;
+                                       always use this, not plain "claude")
+  ./gdm install-claude [VERSION]       only Claude Code, its settings, and the sign-in or key
+  ./gdm clean                          remove what setup installed (programs, Claude, logins);
+                                       asks first, keeps results/
+
+Results are saved under results/. Nothing in this kit can delete, move or
+re-share anything in Google Drive.
+EOF
+}
+
+cmd="${1:-help}"
+[ $# -gt 0 ] && shift
+case "$cmd" in
+  setup)            "$KIT/setup.sh"; exec "$KIT/install-claude-lcls.sh" ;;
+  login)            run_tool gdrive_login.py readonly drive.readonly "${1:?give your email}" ;;
+  login-writer)     run_tool gdrive_login.py writer drive "${1:?give your email}" ;;
+  inventory)        run_tool inventory.py "$@" ;;
+  verify)           run_tool verify.py "$@" ;;
+  safety-copy)      run_tool safety_copy.py "$@" ;;
+  confluence-login) need_setup; exec "$KIT/.claude/skills/confluence-search/scripts/confluence-login" "$@" ;;
+  jira-login)       need_setup; exec "$KIT/.claude/skills/jira-search/scripts/jira-login" "$@" ;;
+  install-claude)   need_setup; exec "$KIT/install-claude-lcls.sh" "$@" ;;
+  claude)           launch_claude "$@" ;;
+  clean)            clean_kit ;;
+  help|-h|--help)   usage ;;
+  *)                echo "Unknown command: $cmd" >&2; usage; exit 2 ;;
+esac

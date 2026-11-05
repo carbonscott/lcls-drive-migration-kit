@@ -1,0 +1,518 @@
+---
+name: jira-search
+description: Search SLAC Jira live using JQL (Jira Query Language) via the REST search API. Covers every project your account can see (195 projects, ~55,000 issues), with each issue's description and full comment thread. Use for questions about LCLS/TID/ECS/DAQ tickets, detector and hardware builds, experiment tooling, "what is the status of X", "who is working on X", "what broke and how was it fixed", "find the ticket about X", or reading one issue end to end.
+---
+
+# Jira live search (JQL)
+
+Query `jira.slac.stanford.edu` directly — Jira Server 10.3.19. This searches
+**every project the user's own account can see, always current**: 195 projects
+and roughly 55,000 issues for a typical LCLS account, including each issue's
+description and its whole comment thread.
+
+Results are filtered by the token owner's permissions, so coverage differs
+between users. `jqlsearch.py whoami` says which identity is in play.
+
+## Running the script
+
+No venv, no `pip install`, no dependencies — the script carries PEP 723 inline
+metadata and uses only the standard library, so all three of these work. (A
+token is the one thing you do need; see **Auth** below.)
+
+```bash
+SKILL_DIR="${CLAUDE_SKILL_DIR}"                       # this skill's directory, filled in for you
+source "$SKILL_DIR/env.sh"                            # puts the shared uv on PATH
+JQL="$SKILL_DIR/scripts/jqlsearch.py"                 # see below
+uv run --script "$JQL" text "detector calibration"    # preferred
+"$JQL"          text "detector calibration"           # shebang runs it through uv
+python3 "$JQL"  text "detector calibration"           # only if python3 is >= 3.9
+```
+
+Source `env.sh` in the *same* bash command as the script — each command runs in a
+fresh shell, so a `source` from an earlier one is already gone. It puts the
+facility's shared `uv` on `PATH` (S3DF `/sdf/group/lcls/ds/dm/apps/dev/bin`, OLCF
+`/ccs/home/cwang31/.local/bin`) and sets a per-user uv cache, so these commands
+work without a personal `~/.local/bin/uv`.
+
+**Use `uv` unless you know the local `python3` is 3.9 or newer.** The script
+declares `requires-python = ">=3.9"` and uv provisions that automatically; the
+system python on SLAC login nodes is 3.6 and cannot parse the file at all
+(`SyntaxError: future feature annotations is not defined`).
+
+`SKILL_DIR` above is the absolute path of the directory holding this
+`SKILL.md`. Claude Code fills it in when it loads the skill, and the shared
+opencode deployment has it written in at deploy time. If it is not an absolute
+path as you read it, use the "Base directory for this skill" path printed when
+the skill loaded. Do not guess `~/.claude/skills/jira-search`: claude-lcls keeps
+its skills under `~/.claude-lcls/skills`, and opencode under its own config
+directory.
+
+Examples below use `uv run --script`. Copy `jqlsearch.py` anywhere you like — it
+is standard-library-only and has no repo-relative dependencies.
+
+## Auth
+
+Each user needs their own personal access token. It is resolved in this order:
+
+1. `$JIRA_TOKEN`
+2. `$JIRA_TOKEN_FILE`
+3. `~/.config/jira-search/token` — the default
+
+There is deliberately **no shared fallback path**, so a central install never
+authenticates everyone as one account. If the token is missing the script prints
+setup instructions; if it is group- or world-readable the script refuses to use
+it. `JIRA_URL` points at a different instance.
+
+### The token is not read-only — this code is
+
+A Jira Server PAT carries the **full permissions of the account that minted it**,
+write included. There is no read-only PAT to ask for. The read-only-ness of this
+skill therefore lives in `scripts/jqlsearch.py`: every call it makes is a GET,
+with one exception — Jira takes JQL in a request body, so searching is
+`POST /rest/api/2/search`, which creates nothing. Nothing here creates, edits,
+transitions, assigns, comments on, links, or deletes anything. A first look at
+that is one line:
+
+```bash
+grep -nE 'urlopen|Request\(|data=|method=|POST|PUT|DELETE|PATCH' "$SKILL_DIR"/scripts/*
+```
+
+**Four hits**, and every one of them has to be accountable:
+
+| What the line is | Why it is allowed |
+|---|---|
+| `req = urllib.request.Request(url, headers=self.headers())` | the GET builder — **no `data=`, no `method=`**, which is exactly what makes urllib send a GET |
+| `# POST /rest/api/2/search normally — …` | the comment above the search call |
+| `req = urllib.request.Request(…, data=body, method="POST", …)` | the one search call: Jira takes JQL in a request body |
+| `with urllib.request.urlopen(req, …) as r:` | the single place either request is actually sent |
+
+Do not settle for the narrower `grep -nE 'method|POST|PUT|DELETE|PATCH'`. It
+finds only the last two, and it would **miss a future
+`urllib.request.Request(url, data=payload)`** — urllib makes any request that
+carries a body a POST whether or not anyone wrote `method=`. That is precisely
+the change that would quietly give this skill the ability to write, so `data=`,
+`Request(` and `urlopen` are in the pattern on purpose.
+
+If a fifth hit appears, or the GET builder above ever grows a `data=`, this skill
+can change Jira.
+
+### Three checks with known blind spots, and the one bound that is real
+
+The grep above catches a body or a verb wherever it is written. What it cannot
+catch is a primitive its vocabulary never heard of — this writes to Jira and
+matches none of its eight alternatives:
+
+```python
+urllib.request.build_opener().open(url, b'{}')     # control A
+```
+
+So also enumerate which egress primitives the file can reach at all, by parsing
+it rather than by pattern-matching it:
+
+```bash
+uv run --python '>=3.9' python - "$SKILL_DIR"/scripts/jqlsearch.py <<'PY'
+import ast, sys
+EGRESS = {"urllib.request.Request", "urllib.request.urlopen",
+          "urllib.request.urlretrieve", "urllib.request.build_opener",
+          "urllib.request.OpenerDirector", "http.client.HTTPSConnection",
+          "http.client.HTTPConnection", "subprocess.run", "subprocess.Popen"}
+calls = [ast.unparse(n.func) for n in ast.walk(ast.parse(open(sys.argv[1]).read()))
+         if isinstance(n, ast.Call)]
+print("egress:", sorted(set(calls) & EGRESS))
+print("opens :", sorted({c for c in calls if c == "open" or c.endswith(".open")}))
+PY
+```
+
+```
+egress: ['urllib.request.Request', 'urllib.request.urlopen']
+opens : ['open', 'os.open']
+```
+
+Two network entry points, both `urllib`; the `open` sites are filesystem, not
+network. **But do not stop here, because this check cannot fail for a writer.**
+The two names it permits are exactly the two a write needs:
+
+```python
+req = urllib.request.Request(url, data=b'...', method="PUT")   # control B
+with urllib.request.urlopen(req) as r: ...
+```
+
+Control B prints the *same clean output above*. The grep catches control B and
+misses control A; the enumeration catches A and misses B. Run both — and for
+the property you actually care about, *every request is a GET except one POST to
+`/search`*, look at the arguments of each call site, which is closer to it:
+
+```bash
+uv run --python '>=3.9' python - "$SKILL_DIR"/scripts/jqlsearch.py <<'PY'
+import ast, sys
+SEND = ("Request", "urlopen", "urlretrieve", "build_opener", "request",
+        "HTTPConnection", "HTTPSConnection", "system", "popen", "run", "Popen")
+tree = ast.parse(open(sys.argv[1]).read())
+alias = {}                                # so `import x as y` cannot hide a name
+for n in ast.walk(tree):
+    if isinstance(n, ast.Import):
+        for a in n.names: alias[a.asname or a.name] = a.name
+    elif isinstance(n, ast.ImportFrom):
+        for a in n.names: alias[a.asname or a.name] = f"{n.module}.{a.name}"
+def canon(s):
+    h, _, r = s.partition("."); return alias.get(h, h) + ("." + r if r else "")
+for n in ast.walk(tree):
+    if isinstance(n, ast.Call) and canon(ast.unparse(n.func)).rsplit(".", 1)[-1] in SEND:
+        kw = {k.arg: ast.unparse(k.value) for k in n.keywords}
+        body = kw.get("data") or (ast.unparse(n.args[1]) if len(n.args) > 1 else None)
+        print(f"L{n.lineno:<5} {canon(ast.unparse(n.func))}")
+        print(f"        url    = {ast.unparse(n.args[0]) if n.args else '-'}")
+        print(f"        body   = {body or 'NONE'}")
+        print(f"        method = {kw.get('method', '(none -> GET)')}")
+PY
+```
+
+Three sites, and this is the entire network surface of the tool:
+
+```
+L343   urllib.request.Request
+        url    = url
+        body   = NONE
+        method = (none -> GET)
+L364   urllib.request.Request
+        url    = f'{BASE}{API}/search'
+        body   = body
+        method = 'POST'
+L409   urllib.request.urlopen
+        url    = req
+        body   = NONE
+        method = (none -> GET)
+```
+
+One body, one verb, and the verb is `POST` to `/search`, which creates nothing.
+This check does fail on control B — whose `method="PUT"` is a literal argument at
+the construction call — and that narrow case is all it adds over the other two.
+**It does not generalise and it is not a proof.** Three writes that leave its
+output byte-identical, none of them using `getattr`, `eval` or `importlib`:
+
+- **assign after construction.** `req.data = b'...'` then `req.method = "PUT"` are
+  plain statements, not calls, so no block moves; the mutated site goes on
+  printing `body = NONE  method = (none -> GET)` for a request that will send a
+  PUT. The grep catches this one.
+- **subclass.** `class _R(urllib.request.Request)` with an overridden
+  `get_method`, sent through the `_send` that is already there, adds no call site
+  at all. Build the verb with `chr()` and **all three checks report clean** on a
+  file that sends `DELETE /rest/api/2/issue/{key}`.
+- **compute the verb.** `method=verb` prints `method = verb`, not the verb.
+
+So the thing that actually bounds this file is none of the three. It is that
+there are only four endpoints it can reach, and you can list them all:
+
+```bash
+grep -nE '\{API\}/' "$SKILL_DIR"/scripts/jqlsearch.py
+```
+
+```
+364:        req = urllib.request.Request(f"{BASE}{API}/search", data=body, method="POST",
+367:        return self._send(req, f"{API}/search", tries)
+688:        me = Client(verbose=args.verbose, token=token).get(f"{API}/myself")
+709:    me = Client(verbose=args.verbose).get(f"{API}/myself")
+721:    rows = Client(verbose=args.verbose).get(f"{API}/project")
+723:        sys.exit(f"unexpected response from {API}/project: {str(rows)[:200]}")
+959:    data = Client(verbose=args.verbose).get(f"{API}/issue/{key}", params)
+```
+
+
+`/search` is the only one carrying a body or a verb; `/myself`, `/project` and
+`/issue/{key}` are GETs. There is no `/transitions`, `/comment`, `/issueLink`,
+`/worklog` or `/assignee` anywhere in the file — and writing to Jira needs one of
+those, or a verb on one of these four. Those seven lines are the audit. They are
+a smaller thing to check than any script on this page, and they do not care how
+cleverly a call site is written.
+
+List imports by AST too, not with `grep '^import'` — that `^` misses the
+indented `import pwd` at line 48, and an import inside a function body is
+exactly where something unwanted would hide:
+
+```bash
+uv run --python '>=3.9' python - "$SKILL_DIR"/scripts/jqlsearch.py <<'PY'
+import ast, sys
+for n in ast.walk(ast.parse(open(sys.argv[1]).read())):
+    if isinstance(n, (ast.Import, ast.ImportFrom)):
+        print(n.lineno, getattr(n, "module", ""), [a.name for a in n.names])
+PY
+```
+
+**`uv` is not optional.** `ast.unparse` needs Python 3.9 or newer and the system
+`python3` on a SLAC login node is 3.6, where `hasattr(ast, "unparse")` is
+`False` — so run these under `uv` or they silently cannot be performed at all.
+
+None of this constrains what a *token* can do. It constrains what this code does
+with one, and it does that on evidence you can read rather than on a script's
+verdict. Treat all three checks as regression tripwires with known blind spots —
+and note that the blind spots listed above are only the ones someone has found
+so far, which is the usual state of affairs for a static check against a
+motivated change. The guarantee is the endpoint list plus 1,203 readable lines,
+not a clean audit run.
+
+### Never announce a missing token you have not observed
+
+**Do not tell the user to set up a token unless a command you actually ran just
+failed with a token error.** Most users already have one, and being told to redo
+setup they completed is worse than useless — it makes them doubt a working
+install. The instructions below are a *reaction* to a failure, never a
+precondition to check first.
+
+If you are unsure whether auth works, do not guess and do not read it off this
+file. Run one cheap command and look at the output:
+
+```bash
+uv run --script "$JQL" whoami
+```
+
+```
+Cong Wang <cwang31@slac.stanford.edu>
+  instance: https://jira.slac.stanford.edu
+  account:  cwang31@slac.stanford.edu (key JIRAUSER21902)
+  token:    ~/.config/jira-search/token
+  note:     search results are filtered by your own permissions —
+            another account sees a different set of projects.
+  note:     a Jira PAT carries this account's FULL permissions,
+            including write. This tool only ever reads.
+```
+
+The two `note:` blocks are part of the output, not commentary added here.
+
+A name and email means auth is fine — proceed with the real query. Only if a
+command exits with an error mentioning the token do the following apply.
+
+### When a command really did fail on the token
+
+Stop and tell the user to set one up themselves, in a terminal of their own. The
+command ships in this skill directory, so it works even for someone who only
+ever received the deployed skill:
+
+```bash
+${CLAUDE_SKILL_DIR}/scripts/jira-login           # prompts, hidden, writes mode 600
+${CLAUDE_SKILL_DIR}/scripts/jira-login --force   # replace an expired or wrong token
+```
+
+Hand it over with the path written out in full, exactly as it appears above,
+never as `$SKILL_DIR/...` or `~/.claude/...`. Their terminal has none of your
+shell variables, and the skill is not under `~/.claude` for everyone. (If the
+path above does not start with `/`, build it from the base-directory path, as
+described under **Running the script**.) That one path is all they need:
+`jira-login` loads the shared `uv` itself, so it works from a fresh login shell
+with no `uv` on `PATH` and no `source` line first.
+
+It prompts for the token with input hidden, so it needs a real terminal of the
+user's own, not your shell.
+
+**Inside opencode-sandbox** (your shell has `APPTAINER_NAME=opencode-sandbox.sif`):
+the sandbox hides the user's real home directory and copies the token in only
+when it starts. Tell the user to run the command in a normal S3DF terminal,
+outside the sandbox, and then quit and restart `opencode-sandbox`. The same goes
+for `--force`: a running sandbox keeps the old copy until it restarts.
+
+They mint the token first, in a browser, at
+`https://jira.slac.stanford.edu/secure/ViewProfile.jspa?selectedTab=com.atlassian.pats.pats-plugin:jira-user-personal-access-tokens`
+— there is no API for the first one.
+
+Quote the error you actually got. Three different failures, three different fixes:
+
+- `error: no Jira token.` — nothing is installed yet; plain `jira-login`.
+- `error: HTTP 401 — token rejected.` — a token exists but is invalid, expired,
+  or revoked; `jira-login --force`.
+- `error: Jira answered as ANONYMOUS (X-AUSERNAME: anonymous)` — the Bearer was
+  not accepted at all and Jira served the logged-out view. Same fix as 401, and
+  note that **any result you already showed from that call was the public
+  subset, not the user's**.
+
+**Do not** read, print, guess, or type a token yourself, and do not run
+`jira-login` for the user — it prompts them, deliberately, so the secret never
+passes through you or through a command line.
+
+## Commands
+
+| Command | Use it for |
+|---|---|
+| `text "<words>"` | Free-text search. Builds the JQL for you. **Start here.** |
+| `search "<jql>"` | A raw JQL query when you need full control. |
+| `issue <key\|url>` | One issue: header, description, and every comment. |
+| `projects` | List the projects this account can see (find the right key). |
+| `whoami` | Which identity the token belongs to. One cheap call; good first check. |
+| `login` | Install a token. The user runs this — see **Auth**, never you. |
+
+`text` and `search` share `--limit N` (default 25, `0` = no cap), `--start N`,
+`--all`, `--json`, `--fields CSV`, and `--excerpt`.
+
+### `-v` — see what the network is doing
+
+`-v` / `--verbose` works on **every** subcommand and writes to **stderr** only:
+the rate-limit budget left after each response, and a line for each 429 backoff
+while it waits. Nothing on stdout changes, so adding it never disturbs a pipe or
+`--json`.
+
+```bash
+uv run --script "$JQL" -v text "epixuhr" --limit 1     # before the subcommand
+uv run --script "$JQL" text "epixuhr" -v --limit 1     # after it — also works
+```
+
+Both positions are accepted. `-v` is how you see the whole rate-limit story
+described under **Rules** below — every 429 sleep, however short. Without it,
+only sleeps of 30 s or more announce themselves, so a *long* wait is never
+mistaken for a hang, but a run of short ones is still invisible.
+
+### text — the common case
+
+```bash
+uv run --script "$JQL" text "epixuhr"                              # whole instance
+uv run --script "$JQL" text "detector calibration" --limit 3
+uv run --script "$JQL" text "epixuhr" --project TIDAT --recent --limit 3
+uv run --script "$JQL" text "timing" --open --since 30d --limit 3  # updated in 30 days
+uv run --script "$JQL" text "QCFG_parse" --field summary           # summary only
+uv run --script "$JQL" text "epixuhr" --limit 2 --excerpt          # + description snippet
+uv run --script "$JQL" text "epixuhr" --assignee 'currentUser()' --limit 1
+```
+
+The first line of the output is the JQL that was built, so you can widen or
+tweak it and re-run it through `search`:
+
+```
+jql: text ~ "epixuhr" AND project = "TIDAT" ORDER BY updated DESC
+111 match(es); showing 3
+
+[1] TIDAT-5193  (Dawood) ePixUHR 3x2 PL516 PDU panel adapter assembly x12
+    Assembly  |  CABLE Fabrication Only  |  project=TIDAT  |  priority=Standard  |  updated 2026-09-03  |  assignee=unassigned
+    https://jira.slac.stanford.edu/browse/TIDAT-5193
+```
+
+Flags: `--project KEY` (repeatable), `--type Bug`, `--status "To Do"`,
+`--assignee NAME|currentUser()`, `--since WHEN`, `--open`, `--recent`,
+`--field text|summary|description|comment` (default `text` is Jira's
+multi-field alias: summary, description, environment, comments and text custom
+fields — which is why `text ~ "epixuhr"` finds 165 issues where `summary ~` finds
+94, `description ~` 47 and `comment ~` 25).
+
+`--since` takes `"2026-01-01"`, `startOfMonth()`, or `30d`. Write `30d`, **not**
+`-30d`: a bare leading dash is eaten by the argument parser as an unknown flag.
+`--since=-30d` (with the equals sign) also works.
+
+### search — raw JQL
+
+```bash
+uv run --script "$JQL" search 'project = FERMIS3DF ORDER BY updated DESC'
+uv run --script "$JQL" search 'reporter = currentUser() ORDER BY created DESC'
+uv run --script "$JQL" search 'text ~ "epix*" AND created > -30d' --limit 3
+uv run --script "$JQL" search 'project = FERMIS3DF AND status = "To Do"' --limit 2 --fields summary,updated
+uv run --script "$JQL" search 'key = FERMIS3DF-43' --json --fields summary,status
+uv run --script "$JQL" search 'issuetype = Bug ORDER BY created ASC' --limit 1200 --all --fields summary
+```
+
+Every hit prints the issue key and its `browse` URL — cite that URL, not the
+REST `self` link the API returns.
+
+One response is capped at **1000 rows** by the server however large `--limit`
+is; `--all` pages until `--limit` is filled, 1000 rows at a time with a half
+second between pages. `--limit 0 --all` really does fetch everything — that is
+12,914 rows and 13 requests for `issuetype = Bug`, so mean it when you ask.
+
+`--fields` replaces the default
+`summary,status,issuetype,assignee,updated,project,priority`. Jira sends **no
+excerpt with a hit** — unlike Confluence — so a snippet needs `description`
+fetched explicitly, which is what `--excerpt` does.
+
+### issue — read the actual ticket
+
+A search hit is one line of metadata. The answer to a real question is almost
+always in the description and the comments:
+
+```bash
+uv run --script "$JQL" issue FERMIS3DF-43
+uv run --script "$JQL" issue https://jira.slac.stanford.edu/browse/FERMIS3DF-43 --no-comments
+uv run --script "$JQL" issue FERMIS3DF-43 --comments 1     # newest N comments
+uv run --script "$JQL" issue FERMIS3DF-43 --out FERMIS3DF-43.md
+uv run --script "$JQL" issue FERMIS3DF-43 --rendered       # server-rendered HTML
+```
+
+It accepts a bare key, a `/browse/KEY` URL, or a board URL carrying
+`?selectedIssue=KEY`. Output is a Markdown header, then `## Description`, then
+`## Comments (N)`:
+
+```
+# FERMIS3DF-43  QCFG_parse fails in 64-bit container
+
+- type: Bug
+- status: To Do
+- resolution: Unresolved
+- project: FERMIS3DF — Fermi-S3DF
+- priority: Major
+- assignee: unassigned
+- reporter: jgt@slac.stanford.edu
+- created: 2026-09-04 15:19:31
+- updated: 2026-09-04 15:20:18
+- url: https://jira.slac.stanford.edu/browse/FERMIS3DF-43
+```
+
+The description and comments come back as **Jira wiki markup** — `h2.`,
+`{code:java}...{code}`, `* bullets`, `[label|url]` — not HTML and not Markdown.
+Read it as it is; the script prints it verbatim, because flattening it destroys
+exactly what you need: link targets to cite, heading levels, and code-block
+boundaries. `--rendered` asks the server for its own HTML rendering instead
+(3,224 chars of markup become 3,893 chars of HTML on FERMIS3DF-43) — worth it
+for a table or a macro, not otherwise.
+
+### projects — find a key
+
+```bash
+uv run --script "$JQL" projects
+uv run --script "$JQL" projects --filter lcls
+```
+
+```
+XROBCS           software     LCLS X-Ray Optics 5kW BCS
+
+36 of 195 projects visible to this token match 'lcls'
+```
+
+## Workflow
+
+1. **Search broadly first** — `text "<words>"` with no `--project`. Jira here is
+   195 projects wide and the interesting ticket is often in a project you would
+   not have guessed (TID hardware, ECS, LCLSESH, ...).
+2. **Read the match count.** `165 match(es)` is workable; thousands means the
+   query is too vague — add `--project`, `--type`, `--open`, or better words.
+3. **Open the promising issues** with `issue KEY`. The hit line carries no
+   description at all; the resolution of a bug is usually in the last comment.
+4. **Cite the browse URL** printed with each hit so the user can open the source.
+
+## Rules
+
+- **`~` for text, `=` for exact.** `summary ~ "psana"` matches substrings;
+  `summary = "psana"` demands the whole summary. Using `=` on `text` is an
+  error — the server answers *"The operator '=' is not supported by the 'text'
+  field."*
+- **Project keys are uppercase and are not the display names** — the key is
+  `FERMIS3DF`, the name is `Fermi-S3DF`. Use `projects` to find them.
+- **Quote multi-word values**: `status = "To Do"`, `text ~ "detector
+  calibration"`. `text` builds this for you.
+- **Open work is `resolution = Unresolved`**, not a status name — status names
+  differ per project (`To Do`, `Backlog`, `In Preparation`, `Stalled`, ...).
+  `text --open` writes that clause for you.
+- **Rate limits are real**: 70 requests of burst, refilling 5/s. The script backs
+  off on HTTP 429 — don't wrap it in a tight loop, and prefer one `--limit 100`
+  call over 100 calls. Short backoffs are invisible unless you pass `-v`, so a
+  command that seems to hang is often sleeping off a 429; any sleep of 30 s or
+  more says so on stderr with or without `-v`. Total backoff for one command is
+  capped at 10 minutes (`RETRY_BUDGET`), after which it gives up and tells you
+  how long it waited rather than stalling an `--all` sweep for hours. This
+  instance sends `Retry-After: 0`, which is **not** obeyed literally — see
+  `docs/findings.md`.
+- **A 200 response is not proof of auth.** A bad Bearer gets Jira's anonymous
+  view, not an error; the script checks `X-AUSERNAME` on every response and
+  fails loudly instead of quietly showing you a stranger's smaller Jira.
+- **Never print the token** or paste it into a command line.
+- **This skill never writes to Jira.** If a user asks you to file, edit,
+  transition, assign, or comment on an issue, say that this tool is read-only
+  and hand them the browse URL — do not reach for `curl`.
+
+## Reference
+
+`reference/jql-cheatsheet.md` (next to this file) — fields, operators,
+functions, and the quirks verified against *this* instance. Read it before
+writing a non-obvious JQL query.

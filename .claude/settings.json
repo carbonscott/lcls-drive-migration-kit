@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./gdm help)",
+      "Bash(./gdm inventory:*)",
+      "Bash(./gdm verify:*)"
+    ],
+    "ask": [
+      "Bash(./gdm safety-copy:*)",
+      "Bash(./gdm login:*)",
+      "Bash(./gdm login-writer:*)"
+    ],
+    "deny": [
+      "Bash(rclone:*)",
+      "Bash(.sandbox/bin/rclone:*)",
+      "Bash(./.sandbox/bin/rclone:*)",
+      "Read(./.sandbox/config/**)",
+      "Edit(./tools/**)",
+      "Edit(./gdm)",
+      "Bash(./gdm claude:*)",
+      "Bash(claude:*)",
+      "Edit(./install-claude-lcls.sh)",
+      "Edit(./claude-settings.template.json)",
+      "Edit(./.sandbox/claude/settings.json)",
+      "Bash(./gdm install-claude:*)",
+      "Bash(./install-claude-lcls.sh:*)",
+      "Bash(.sandbox/bin/claude:*)",
+      "Bash(./.sandbox/bin/claude:*)",
+      "Bash(./gdm setup:*)",
+      "Bash(./setup.sh:*)",
+      "Edit(./setup.sh)",
+      "Bash(./gdm clean:*)"
+    ]
+  }
+}
