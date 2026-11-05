@@ -12,9 +12,9 @@ You were started with `./gdm claude`, so your own settings, history and temporar
 files live in `.sandbox/claude/` and `.sandbox/tmp/`. Keep it that way: create
 files only inside this folder (`results/` for anything the person should keep),
 and never run `claude`, `./gdm claude`, `./gdm setup`, `./gdm install-claude` or
-`./gdm clean` yourself. Your requests go through SLAC (its AI gateway or the Mac's SLAC sign-in),
-which needs the SLAC VPN: if they start failing, ask the person to check the VPN,
-then resume with `./gdm claude --continue`.
+`./gdm clean` yourself. Your requests go through SLAC's AI gateway, the Mac's SLAC sign-in, or the
+person's Claude account. The first two need the SLAC VPN: if requests start
+failing, ask the person to check the VPN, then resume with `./gdm claude --continue`.
 
 ## First time in this folder
 
@@ -47,7 +47,8 @@ then resume with `./gdm claude --continue`.
 ## Things the person must do themselves
 
 - **Setup** (already done if you are running): `./gdm setup` in Terminal, which
-  installs Claude Code with either a SLAC AI key or the Mac's SLAC sign-in. Never
+  installs Claude Code with a SLAC AI key, the Mac's SLAC sign-in, or a Claude
+  account sign-in. Never
   ask them to paste a key to you. If setup has to be redone, they type
   `./gdm setup` themselves in a separate Terminal window.
 - **Google login** (`./gdm login EMAIL`, `./gdm login-writer EMAIL`): a browser tab

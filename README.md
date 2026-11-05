@@ -29,10 +29,20 @@ rclone, then runs `install-claude-lcls.sh` (alone: `./gdm install-claude`):
   - **Policy requires a sign-in** (`forceLoginMethod`, e.g. `"gateway"` on
     SLAC-managed Macs): Claude Code refuses API keys there, so no key and no SLAC
     gateway settings. The owner signs in the first time Claude starts (`/login`).
-  - **No such policy:** adds the SLAC AI gateway address and model names, asks for
-    a SLAC AI key (hidden input; paste markers and spaces are stripped; checked
-    with the gateway; saved only in `.sandbox/config/`), and asks Claude a
-    one-line test question. Give the owner the key in person, not by email.
+  - **No such policy:** asks for a SLAC AI key (hidden input; paste markers and
+    spaces are stripped; checked with the gateway; saved only in
+    `.sandbox/config/`), adds the SLAC AI gateway address and model names, and
+    asks Claude a one-line test question. Give the owner the key in person, not
+    by email.
+  - **No key (just Return), or `./gdm setup --claude-login`:** offers to sign in
+    with a Claude account right away (`claude auth login`: personal Pro/Max, or
+    the organization's Claude for Education, Team or Enterprise, which the
+    sign-in page routes by email), then the same test question. `s` skips; Claude
+    then asks at first start. The choice is remembered on later runs;
+    `./gdm setup --slac-key` switches back. The sign-in lives in the macOS
+    Keychain as `Claude Code-credentials-<first 8 hex of sha256 of
+    .sandbox/claude's path>`, separate from other Claude logins; `./gdm clean`
+    deletes that one entry.
 
 `./gdm claude` then starts Claude. It marks the kit folder as trusted in the kit's
 own Claude config (`tools/trust_folder.py`), so the "trust this folder?" question,

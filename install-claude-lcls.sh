@@ -18,13 +18,18 @@
 #     refuses API keys on such Macs, so the kit does not set one.
 #   - Other Macs: a SLAC AI key, used through SLAC's AI gateway
 #     (ai-api.slac.stanford.edu, on the SLAC network or VPN).
+#   - On request, where no IT policy decides: --claude-login signs in with a
+#     Claude account (Pro, Max, Team, Enterprise) or an Anthropic Console account
+#     instead of the SLAC key. Later runs remember it; --slac-key switches back.
 #
 # Safe to run again: it updates Claude Code to the newest release, refreshes the
 # settings from the template, and keeps the key unless a new one is pasted.
 #
-#   ./gdm install-claude            the newest release
-#   ./gdm install-claude stable     Anthropic's "stable" channel (about a week behind)
-#   ./gdm install-claude 2.1.285    one exact version
+#   ./gdm install-claude                 the newest release
+#   ./gdm install-claude stable          Anthropic's "stable" channel (about a week behind)
+#   ./gdm install-claude 2.1.285         one exact version
+#   ./gdm install-claude --claude-login  (or ./gdm setup --claude-login) Claude account sign-in
+#   ./gdm install-claude --slac-key      back to the SLAC AI key
 set -euo pipefail
 
 KIT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -35,7 +40,16 @@ fi
 SANDBOX="$GDM_SANDBOX"
 
 RELEASES="https://downloads.claude.ai/claude-code-releases"
-WANTED="${1:-latest}"
+WANTED="latest"
+choice=""   # "sign-in" for --claude-login, "key" for --slac-key
+for arg in "$@"; do
+  case "$arg" in
+    --claude-login) choice="sign-in" ;;
+    --slac-key)     choice="key" ;;
+    -*)             echo "Unknown option: $arg (use --claude-login or --slac-key)" >&2; exit 2 ;;
+    *)              WANTED="$arg" ;;
+  esac
+done
 CLAUDE_BIN="$SANDBOX/bin/claude"
 SETTINGS="$SANDBOX/claude/settings.json"
 KEY_FILE="$SANDBOX/config/slac-ai-key"
@@ -98,9 +112,13 @@ fi
 # ─── 2. How Claude Code signs in on this Mac ──────────────────────────────
 forced_login="$(py "$KIT/tools/claude_login_policy.py")"
 if [ -n "$forced_login" ]; then
-  mode="sign-in"
+  mode="sign-in"; why="policy"          # the Mac's IT policy decides
+elif [ -n "$choice" ]; then
+  mode="$choice"; why="chosen"          # --claude-login or --slac-key
+elif [ -f "$SETTINGS" ] && ! grep -q '"apiKeyHelper"' "$SETTINGS"; then
+  mode="sign-in"; why="chosen"          # a sign-in chosen on an earlier run
 else
-  mode="key"
+  mode="key"; why="default"
 fi
 
 # ─── 3. Settings ──────────────────────────────────────────────────────────
@@ -156,27 +174,80 @@ print_done() {
   echo "  3. Ask Claude: \"Where do I start?\""
 }
 
-finish_with_sign_in() {   # Macs whose IT policy requires a sign-in: no key
+ask_test_question() {   # one short question to Claude, through the kit's own launcher
+  "$KIT/gdm" claude -p 'Reply with exactly: PONG' --model haiku 2>&1 < /dev/null || true
+}
+
+test_failed() {   # $1 = what Claude Code printed
+  echo "  ✗ Claude did not answer. Claude Code is installed; the message below says why:" >&2
+  printf '%s\n' "$1" | sed 's/^/      /' >&2
+  echo "    Fix that, then run ./gdm setup again." >&2
+  echo "    If the message is unclear, send this whole window to the person who gave you this folder." >&2
+  exit 1
+}
+
+signed_in() {   # is this folder's Claude Code signed in to an account?
+  "$KIT/gdm" claude auth status --json < /dev/null 2>/dev/null | grep -q '"loggedIn": *true'
+}
+
+finish_with_sign_in() {   # no key: Claude Code signs in with an account
   echo "── Sign-in"
-  echo "  This Mac's IT settings require Claude Code to sign in through your"
-  echo "  organization, so no key is needed. The first time you start Claude, it"
-  echo "  asks you to sign in: follow the steps it shows, with your SLAC or Stanford"
-  echo "  account. (If it doesn't ask, type /login.)"
-  print_done
-  exit 0
+  if [ "$why" = "policy" ]; then
+    echo "  This Mac's IT settings require Claude Code to sign in through your"
+    echo "  organization, so no key is needed. The first time you start Claude, it"
+    echo "  asks you to sign in: follow the steps it shows, with your SLAC or Stanford"
+    echo "  account. (If it doesn't ask, type /login.)"
+    print_done
+    exit 0
+  fi
+
+  if signed_in; then
+    echo "  ✓ this folder's Claude Code is already signed in"
+  else
+    echo "  Sign in with a Claude account: your own (Pro, Max) or your organization's"
+    echo "  (Claude for Education, Team, Enterprise). Both use the same sign-in page;"
+    echo "  for an organization account, sign in with your work email."
+    printf '  Press Return to open the sign-in page in your browser, or type s to skip: '
+    IFS= read -r answer || answer="s"
+    if [ "$answer" = "s" ] || [ "$answer" = "S" ]; then
+      echo "  Skipped. Claude asks you to sign in the first time it starts (or type /login)."
+      echo "  To use a SLAC AI key instead:  ./gdm setup --slac-key"
+      print_done
+      exit 0
+    fi
+    if ! "$KIT/gdm" claude auth login; then
+      echo "  ✗ The sign-in did not finish. Type ./gdm setup to try again, or start" >&2
+      echo "    Claude with ./gdm claude and type /login." >&2
+      exit 1
+    fi
+  fi
+  echo "  (The sign-in is kept in the macOS Keychain under a name of its own for this"
+  echo "  folder, and ./gdm clean removes it. For a SLAC AI key instead: ./gdm setup --slac-key)"
+
+  echo "── Test: one short question to Claude"
+  reply="$(ask_test_question)"
+  if printf '%s' "$reply" | grep -q PONG; then
+    echo "  ✓ Claude answered"
+    print_done
+    exit 0
+  fi
+  test_failed "$reply"
 }
 
 echo "── Settings"
 write_settings "$mode"
 echo "  ✓ Claude Code settings written (from claude-settings.template.json)"
 
-# ─── 4a. Macs that require a sign-in: nothing more to do here ─────────────
+# ─── 4a. Sign-in instead of a key (IT policy, or chosen) ──────────────────
 if [ "$mode" = "sign-in" ]; then
-  echo "  (this Mac's Claude Code policy: forceLoginMethod \"$forced_login\")"
+  if [ "$why" = "policy" ]; then
+    echo "  (this Mac's Claude Code policy: forceLoginMethod \"$forced_login\")"
+    [ "$choice" = "key" ] && echo "  (--slac-key is not possible here: the policy requires a sign-in)"
+  fi
   finish_with_sign_in
 fi
 
-# ─── 4b. Other Macs: the SLAC AI key ──────────────────────────────────────
+# ─── 4b. The SLAC AI key ──────────────────────────────────────────────────
 echo "── SLAC AI key"
 
 # Key on stdin. 0 = the gateway accepts it, 1 = it rejects it, 2 = gateway not reachable.
@@ -201,12 +272,14 @@ save_key() {
 if [ -s "$KEY_FILE" ]; then
   prompt="  Paste a new SLAC AI key, or press Return to keep the current one: "
 else
-  echo "  This Mac needs a SLAC AI key. If you don't have one, ask the person who gave"
-  echo "  you this folder. Nothing appears on the screen while you paste: that is normal."
-  prompt="  Paste the key, then press Return: "
+  echo "  Paste the SLAC AI key you were given, then press Return. Nothing appears on"
+  echo "  the screen while you paste: that is normal."
+  echo "  No SLAC key? Just press Return to sign in with a Claude account instead."
+  prompt="  Key (or just Return): "
 fi
 
 key_ready=0
+no_key=0
 for attempt in 1 2 3; do
   printf '%s' "$prompt"
   IFS= read -rs key || key=""
@@ -218,10 +291,11 @@ for attempt in 1 2 3; do
   if [ -z "$key" ]; then
     if [ -s "$KEY_FILE" ]; then
       echo "  ✓ kept the key already in this folder"
-      key_ready=1; break
+      key_ready=1
+    else
+      no_key=1
     fi
-    echo "  No key entered." >&2
-    continue
+    break
   fi
   status=0
   printf '%s\n' "$key" | check_key || status=$?
@@ -237,13 +311,18 @@ for attempt in 1 2 3; do
   esac
 done
 unset key
+if [ "$no_key" = 1 ]; then
+  # No key: sign in with a Claude account instead
+  write_settings sign-in
+  echo "  ✓ no key: Claude Code settings changed to sign in with an account instead"
+  why="chosen"
+  finish_with_sign_in
+fi
 [ "$key_ready" = 1 ] || die "No key saved. Run ./gdm setup again with the key at hand."
 
 # ─── 5. Test ──────────────────────────────────────────────────────────────
 echo "── Test: one short question to Claude"
-set +e
-reply="$("$KIT/gdm" claude -p 'Reply with exactly: PONG' --model haiku 2>&1 < /dev/null)"
-set -e
+reply="$(ask_test_question)"
 if printf '%s' "$reply" | grep -q PONG; then
   echo "  ✓ Claude answered"
   print_done
@@ -252,11 +331,8 @@ elif printf '%s' "$reply" | grep -q -i -e 'administrator policy' -e 'managed set
   echo "  Claude Code says this Mac's IT policy requires a sign-in instead of a key."
   write_settings sign-in
   echo "  ✓ Claude Code settings changed to use that sign-in"
+  why="policy"
   finish_with_sign_in
 else
-  echo "  ✗ Claude did not answer. Claude Code is installed; the message below says why:" >&2
-  printf '%s\n' "$reply" | sed 's/^/      /' >&2
-  echo "    Fix that, then run ./gdm setup again (press Return to keep the key)." >&2
-  echo "    If the message is unclear, send this whole window to the person who gave you this folder." >&2
-  exit 1
+  test_failed "$reply"
 fi

@@ -83,6 +83,21 @@ launch_claude() {   # start the kit's Claude Code with everything kept inside th
   exec "$SANDBOX/bin/claude" "$@"
 }
 
+kit_keychain_entries() {   # this folder's own Claude sign-in in the macOS Keychain, if any
+  # Claude Code names it "Claude Code-credentials-" + the first 8 hex digits of the
+  # SHA-256 of its config folder path (the CLAUDE_CONFIG_DIR that ./gdm claude sets),
+  # so it is never the everyday Claude login of this Mac
+  command -v security >/dev/null 2>&1 || return 0
+  local dir name
+  for dir in "$SANDBOX/claude" "$(cd "$SANDBOX/claude" 2>/dev/null && pwd -P)"; do
+    [ -n "$dir" ] || continue
+    name="Claude Code-credentials-$(printf '%s' "$dir" | openssl dgst -sha256 | awk '{print $NF}' | cut -c1-8)"
+    if security find-generic-password -s "$name" >/dev/null 2>&1; then
+      echo "$name"
+    fi
+  done | sort -u
+}
+
 clean_kit() {   # remove everything setup installed or stored (.sandbox/); keep results/
   # A person runs this in Terminal, never Claude (the kit's Claude is also blocked
   # by .claude/settings.json)
@@ -99,10 +114,16 @@ clean_kit() {   # remove everything setup installed or stored (.sandbox/); keep 
     echo "Nothing to clean: setup has not been run in this folder."
     exit 0
   fi
+  local keychain_entries name
+  keychain_entries="$(kit_keychain_entries)"
   echo "This removes everything setup put in this folder ($(du -sh "$SANDBOX" 2>/dev/null | cut -f1)):"
   echo "  - the programs: Claude Code, Python, uv, rclone"
   echo "  - Claude's settings and conversation history"
   echo "  - your SLAC AI key, Google logins and SLAC tokens"
+  if [ -n "$keychain_entries" ]; then
+    echo "  - this folder's Claude sign-in, kept in the macOS Keychain (other Claude"
+    echo "    logins on this Mac are not touched)"
+  fi
   echo "It keeps results/ (the record of the migration) and the kit's own files."
   echo "Nothing in Google Drive, Confluence or Jira is touched."
   printf 'Type yes to remove them: '
@@ -110,6 +131,11 @@ clean_kit() {   # remove everything setup installed or stored (.sandbox/); keep 
   if [ "$answer" != "yes" ]; then
     echo "Nothing removed."
     exit 0
+  fi
+  if [ -n "$keychain_entries" ]; then
+    while IFS= read -r name; do
+      security delete-generic-password -s "$name" >/dev/null 2>&1 || true
+    done <<< "$keychain_entries"
   fi
   rm -rf "$SANDBOX"   # removes a link itself, never what it points to
   echo "Removed. To use the kit again, type ./gdm setup."
@@ -121,6 +147,8 @@ LCLS drive migration kit
 
   ./gdm setup                          one time: install the tools and Claude Code into
                                        this folder (run again to update Claude Code)
+  ./gdm setup --claude-login           ...signing in with a Claude account instead of a
+                                       SLAC AI key (--slac-key switches back)
   ./gdm login YOU@stanford.edu         log in READ-ONLY (Google blocks any change)
   ./gdm inventory "FOLDER LINK"        step 1: list every item and its owner
   ./gdm verify INVENTORY.csv "SHARED DRIVE LINK"
@@ -145,7 +173,7 @@ EOF
 cmd="${1:-help}"
 [ $# -gt 0 ] && shift
 case "$cmd" in
-  setup)            "$KIT/setup.sh"; exec "$KIT/install-claude-lcls.sh" ;;
+  setup)            "$KIT/setup.sh"; exec "$KIT/install-claude-lcls.sh" "$@" ;;
   login)            run_tool gdrive_login.py readonly drive.readonly "${1:?give your email}" ;;
   login-writer)     run_tool gdrive_login.py writer drive "${1:?give your email}" ;;
   inventory)        run_tool inventory.py "$@" ;;
