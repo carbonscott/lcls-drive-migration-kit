@@ -106,6 +106,7 @@ START-HERE.html, Appendix I.
 | `install-claude-lcls.sh` | `./gdm install-claude`: Claude Code, SLAC gateway settings and key, all in `.sandbox/` (simplified from the LCLS team's installer in github.com/carbonscott/deploy-opencode) |
 | `claude-settings.template.json` | the settings claude-lcls uses: the template inside deploy-opencode's `claude/install-claude-lcls.sh` (9224681), with auto mode, the one-hour cache, fullscreen display and auto-memory off |
 | `CLAUDE.md`, `.claude/settings.json` | instructions and guardrails for Claude Code |
+| `practice/` | made-up data and the 75-second walkthrough recording embedded in START-HERE.html ("See it in action"); `transcript.txt` is the text version |
 | `.claude/skills/` | SLAC confluence-search (5028e30) and jira-search (bce9f83), read-only, from github.com/carbonscott; `env.local` added so they use the kit's own uv |
 
 Created when the kit is used, all inside this folder: `.sandbox/` (programs,

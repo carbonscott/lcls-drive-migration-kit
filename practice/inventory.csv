@@ -1,0 +1,12 @@
+label,path,type,owner,id,link,modified
+yours,LCLS Operations/Shift Schedules,folder,pat@stanford.edu,1AaFolderShift,https://drive.google.com/drive/folders/1AaFolderShift,2026-10-01T09:00:00Z
+yours,LCLS Operations/Shift Schedules/Run 24 schedule,spreadsheet,pat@stanford.edu,1AaRun24Sched,https://docs.google.com/spreadsheets/d/1AaRun24Sched,2026-10-20T15:12:00Z
+yours,LCLS Operations/Ops meeting notes,document,pat@stanford.edu,1AaOpsNotes,https://docs.google.com/document/d/1AaOpsNotes,2026-11-02T17:40:00Z
+yours,LCLS Operations/Procedures,folder,pat@stanford.edu,1AaFolderProc,https://drive.google.com/drive/folders/1AaFolderProc,2026-06-11T10:00:00Z
+same-org,LCLS Operations/Procedures/Beamline startup checklist,document,jlee@stanford.edu,1BbStartup,https://docs.google.com/document/d/1BbStartup,2026-09-14T08:30:00Z
+same-org,LCLS Operations/Procedures/Detector cooldown,document,jlee@stanford.edu,1BbCooldown,https://docs.google.com/document/d/1BbCooldown,2025-03-02T11:00:00Z
+same-org,LCLS Operations/Procedures/Laser safety training slides,presentation,mchen@stanford.edu,1BbLaserSlides,https://docs.google.com/presentation/d/1BbLaserSlides,2024-12-05T13:20:00Z
+same-org,LCLS Operations/Shift Schedules/Run 23 schedule (archive),spreadsheet,mchen@stanford.edu,1BbRun23,https://docs.google.com/spreadsheets/d/1BbRun23,2025-08-30T16:00:00Z
+same-org,LCLS Operations/Contacts list,spreadsheet,rgarcia@stanford.edu,1BbContacts,https://docs.google.com/spreadsheets/d/1BbContacts,2026-10-28T12:00:00Z
+outside-org,LCLS Operations/Procedures/Vendor pump manual,pdf,support@vacuumco.com,1CcPumpManual,https://drive.google.com/file/d/1CcPumpManual,2023-05-17T09:00:00Z
+outside-org,LCLS Operations/Collaborator beamtime request,document,visiting.scientist@gmail.com,1CcBeamReq,https://docs.google.com/document/d/1CcBeamReq,2026-07-09T14:45:00Z

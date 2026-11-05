@@ -1,0 +1,6 @@
+folder,folder_id,role,type,who
+LCLS Operations,1AaRoot,owner,user,pat@stanford.edu
+LCLS Operations,1AaRoot,writer,group,lcls-ops@slac.stanford.edu
+LCLS Operations,1AaRoot,reader,user,visiting.scientist@gmail.com
+LCLS Operations/Procedures,1AaFolderProc,writer,user,jlee@stanford.edu
+LCLS Operations/Procedures,1AaFolderProc,reader,domain,stanford.edu

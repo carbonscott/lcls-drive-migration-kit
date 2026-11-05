@@ -27,6 +27,10 @@ failing, ask the person to check the VPN, then resume with `./gdm claude --conti
 4. Their guide tells them to talk to you in plain words, not to type commands. Run
    the `./gdm` commands yourself (they approve each one), and never ask them to
    type a command, except the SLAC token commands below.
+5. If they ask for a demo, mock or practice run, point them to "See it in action"
+   in START-HERE.html (a 75-second recording of all steps with made-up data) and
+   the made-up files in `practice/`. Do not invent a new mock run or create new
+   practice files: real results must never be mixed up with practice ones.
 
 ## Safety rules (do not break these)
 

@@ -106,6 +106,21 @@ footer { color: var(--muted); font-size: 0.88rem; border-top: 1px solid var(--ru
   .step .n { grid-row: auto; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* "See it in action": practice walkthrough player */
+.player { border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; margin: 1rem 0; }
+.player .screen { background: #14181f; color: #d8dde6; font: 13px/1.35 Menlo, Monaco, "SF Mono", monospace;
+  white-space: pre-wrap; overflow-wrap: anywhere; padding: 14px 16px; height: 34em; overflow-y: auto; }
+.player .screen .b { font-weight: bold; } .player .screen .d { opacity: .6; }
+.player .screen .c31 { color: #ff7b72; } .player .screen .c32 { color: #7ee787; }
+.player .screen .c33 { color: #e3b341; } .player .screen .c36 { color: #79c0ff; }
+.player .controls { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; padding: .5rem .75rem;
+  background: var(--surface); border-top: 1px solid var(--rule); }
+.player .controls button { font: inherit; padding: .3rem .8rem; border: 1px solid var(--rule); border-radius: 6px;
+  background: var(--accent-soft); color: var(--accent); cursor: pointer; }
+.player .controls button:hover { border-color: var(--accent); }
+.player .controls .time { color: var(--muted); margin-left: auto; font-variant-numeric: tabular-nums; }
+.player progress { flex: 1 1 160px; height: 6px; }
 </style>
 </head>
 <body>
@@ -119,6 +134,7 @@ footer { color: var(--muted); font-size: 0.88rem; border-top: 1px solid var(--ru
     <a href="#setup">Set up (once)</a>
     <a href="#start">Every time</a>
     <a href="#one-minute">In one minute</a>
+    <a href="#see-it">See it in action</a>
     <a href="#checklist">Your checklist</a>
     <a href="#why-move">Why move, not copy</a>
     <a href="#kit">What the toolkit can do</a>
@@ -175,9 +191,26 @@ footer { color: var(--muted); font-size: 0.88rem; border-top: 1px solid var(--ru
   </div>
 </section>
 
+<section id="see-it">
+  <h2>See it in action (75 seconds)</h2>
+  <p class="prose">Watch the whole process once before you start: all nine steps (0 to 8), recorded in Terminal with made-up data: a pretend folder of 11 items owned by "Pat", two colleagues, one colleague who left (mchen) and two outside accounts. <strong>Nothing in it touched Google Drive.</strong> The <code>./gdm</code> commands are the real ones you will see Claude run (the Confluence and Jira searches are shown in short form); their output is invented to match. The <em>Claude:</em> and <em>You:</em> lines are an example of the conversation, not a live session. Note the ending: one file owned by the departed colleague did not move, and the walkthrough shows how that is caught.</p>
+  <div class="player" id="practice-player">
+    <div class="screen" aria-live="off" role="img" aria-label="Terminal recording of the practice walkthrough">Press Play to start the practice walkthrough (about 75 seconds).</div>
+    <div class="controls">
+      <button type="button" data-act="play">Play</button>
+      <button type="button" data-act="restart">Restart</button>
+      <button type="button" data-act="speed">Speed 1×</button>
+      <progress max="75478" value="0"></progress>
+      <span class="time">0:00 / 1:15</span>
+    </div>
+  </div>
+  <p class="prose">The same practice files (<code>inventory.csv</code>, <code>summary.json</code>, <code>verify.csv</code> and others) are in the <code>practice/</code> folder, if you want to open them in Excel or Numbers.</p>
+  <script type="application/json" id="practice-recording">[[0,"\u001b[H\u001b[2J\u001b[3J"],[0,"\u001b[2mPRACTICE ONLY - made-up data, no Google Drive access\u001b[0m\r\n\r\n"],[0,"\u001b[1m\u001b[36m=== Step 0: Create the shared drive ===\u001b[0m\r\n"],[0,"\r\n"],[604,"\u001b[33mClaude:\u001b[0m In the Drive web page: Shared drives > New > name it 'LCLS Operations'.\r\n"],[811,"\u001b[33mClaude:\u001b[0m Nothing to run here. Copy the new shared drive's link for steps 5 and 8.\r\n"],[3000,"\u001b[H\u001b[2J\u001b[3J"],[0,"\u001b[2mPRACTICE ONLY - made-up data, no Google Drive access\u001b[0m\r\n"],[0,"\r\n\u001b[1m\u001b[36m=== Step 1: Take the inventory (read-only) ===\u001b[0m\r\n\r\n"],[610,"\u001b[32m$ \u001b[0m"],[0,"."],[31,"/"],[26,"g"],[32,"d"],[28,"m"],[31," "],[31,"l"],[31,"o"],[28,"g"],[28,"i"],[32,"n"],[28," "],[26,"p"],[30,"a"],[83,"t"],[37,"@"],[29,"s"],[45,"t"],[29,"a"],[34,"n"],[33,"f"],[33,"o"],[31,"r"],[31,"d"],[37,"."],[33,"e"],[32,"d"],[31,"u"],[32,"\r\n"],[512,"A browser tab opened. Choose pat@stanford.edu, tick Google Drive, click Continue.\r\n"],[0,"\u001b[32mLogged in READ-ONLY as pat@stanford.edu\u001b[0m\r\n"],[1215,"\u001b[32m$ \u001b[0m"],[0,"."],[31,"/"],[31,"g"],[34,"d"],[29,"m"],[35," "],[37,"i"],[32,"n"],[26,"v"],[32,"e"],[33,"n"],[34,"t"],[35,"o"],[38,"r"],[35,"y"],[34," "],[43,"\""],[33,"h"],[32,"t"],[34,"t"],[34,"p"],[36,"s"],[30,":"],[32,"/"],[33,"/"],[30,"d"],[36,"r"],[36,"i"],[34,"v"],[34,"e"],[31,"."],[34,"g"],[30,"o"],[30,"o"],[35,"g"],[34,"l"],[35,"e"],[33,"."],[33,"c"],[36,"o"],[35,"m"],[37,"/"],[36,"d"],[31,"r"],[33,"i"],[34,"v"],[32,"e"],[38,"/"],[34,"f"],[36,"o"],[34,"l"],[35,"d"],[36,"e"],[34,"r"],[36,"s"],[36,"/"],[33,"1"],[32,"A"],[31,"a"],[36,"R"],[36,"o"],[30,"o"],[28,"t"],[30,"\""],[33,"\r\n"],[513,"Reading 'LCLS Operations' as pat@stanford.edu (read-only)...\r\n  4 items so far\r\n"],[318,"  9 items so far\r\n"],[331,"  11 items so far\r\n"],[14,"{\r\n  \"folder\": \"LCLS Operations\",\r\n  \"folder_id\": \"1AaRoot\",\r\n  \"read_as\": \"pat@stanford.edu\",\r\n  \"items\": 11,\r\n  \"folders\": 2,\r\n  \"by_label\": {\"yours\": 4, \"same-org\": 5, \"outside-org\": 2},\r\n  \"items_not_owned_by_you_per_owner\": {\r\n    \"jlee@stanford.edu\": 2,\r\n    \"mchen@stanford.edu\": 2,\r\n    \"rgarcia@stanford.edu\": 1,\r\n    \"support@vacuumco.com\": 1,\r\n    \"visiting.scientist@gmail.com\": 1\r\n  },\r\n  \"people_and_groups_with_folder_access\": [\r\n    \"jlee@stanford.edu\", \"lcls-ops@slac.stanford.edu\", \"pat@stanford.edu\",\r\n    \"stanford.edu\", \"visiting.scientist@gmail.com\"\r\n  ]\r\n}\r\n"],[0,"\r\n"],[0,"Saved to results/inventory-20261105-1430/\r\n"],[1220,"\u001b[33mClaude:\u001b[0m 11 items: 4 are yours, 5 belong to colleagues, 2 belong to people outside Stanford.\r\n"],[845,"\u001b[33mClaude:\u001b[0m Which of jlee, mchen and rgarcia have left SLAC?\r\n"],[810,"\u001b[1mYou:\u001b[0m mchen left last year.\r\n"],[812,"\u001b[32m$ \u001b[0mc"],[35,"a"],[28,"t"],[29," "],[31,"r"],[36,"e"],[35,"s"],[28,"u"],[34,"l"],[30,"t"],[30,"s"],[30,"/"],[34,"d"],[29,"e"],[33,"p"],[36,"a"],[31,"r"],[30,"t"],[27,"e"],[27,"d"],[31,"-"],[33,"o"],[35,"w"],[35,"n"],[30,"e"],[33,"r"],[33,"s"],[33,"."],[30,"t"],[29,"x"],[40,"t"],[30,"\r\n"],[521,"mchen@stanford.edu\r\n"],[2452,"\u001b[H\u001b[2J\u001b[3J"],[0,"\u001b[2mPRACTICE ONLY - made-up data, no Google Drive access\u001b[0m\r\n\r\n\u001b[1m\u001b[36m=== Step 2: Where are these files linked from? ===\u001b[0m\r\n\r\n"],[612,"\u001b[32m$ \u001b[0m"],[0,"c"],[31,"o"],[31,"n"],[31,"f"],[39,"l"],[32,"u"],[32,"e"],[32,"n"],[36,"c"],[28,"e"],[31,"-"],[40,"s"],[29,"e"],[33,"a"],[31,"r"],[29,"c"],[29,"h"],[31," "],[27,"w"],[29,"h"],[34,"o"],[29,"a"],[24,"m"],[42,"i"],[25,"\r\n"],[507,"Logged in to Confluence as pat\r\n"],[0,"\u001b[32m$ \u001b[0m"],[0,"c"],[32,"o"],[31,"n"],[29,"f"],[47,"l"],[28,"u"],[33,"e"],[34,"n"],[32,"c"],[31,"e"],[32,"-"],[34,"s"],[34,"e"],[26,"a"],[27,"r"],[27,"c"],[27,"h"],[30," "],[27,"'"],[29,"t"],[31,"e"],[29,"x"],[35,"t"],[32," "],[30,"~"],[35," "],[32,"\""],[34,"d"],[26,"o"],[31,"c"],[35,"s"],[30,"."],[35,"g"],[27,"o"],[33,"o"],[32,"g"],[40,"l"],[71,"e"],[30,"."],[30,"c"],[29,"o"],[34,"m"],[31,"\""],[26," "],[35,"O"],[37,"R"],[32," "],[31,"t"],[37,"e"],[38,"x"],[31,"t"],[35," "],[37,"~"],[52," "],[24,"\""],[28,"d"],[29,"r"],[32,"i"],[31,"v"],[27,"e"],[31,"."],[32,"g"],[30,"o"],[23,"o"],[23,"g"],[28,"l"],[30,"e"],[33,"."],[30,"c"],[35,"o"],[35,"m"],[41,"\""],[34,"'"],[32,"\r\n"],[520,"  PCDS / Beamline startup        -> 1BbStartup     (Beamline startup checklist)  same-org\r\n  PCDS / Shift handover          -> 1AaRun24Sched  (Run 24 schedule)             yours\r\n  PCDS / Detector notes          -> 1BbCooldown    (Detector cooldown)           same-org\r\n"],[0,"\u001b[32m$ \u001b[0mj"],[30,"i"],[29,"r"],[29,"a"],[29,"-"],[31,"s"],[32,"e"],[30,"a"],[27,"r"],[34,"c"],[36,"h"],[34," "],[29,"'"],[39,"t"],[29,"e"],[40,"x"],[28,"t"],[31," "],[29,"~"],[33," "],[32,"\""],[30,"d"],[33,"r"],[31,"i"],[109,"v"],[28,"e"],[32,"."],[34,"g"],[32,"o"],[30,"o"],[32,"g"],[32,"l"],[33,"e"],[32,"."],[34,"c"],[32,"o"],[30,"m"],[33,"\""],[34,"'"],[32,"\r\n"],[521,"  LCLSECSD-1234  Vacuum pump service  -> 1CcPumpManual (Vendor pump manual)  \u001b[31moutside-org\u001b[0m\r\n"],[1,"\u001b[33mClaude:\u001b[0m 3 links will keep working after the move.\r\n"],[810,"\u001b[33mClaude:\u001b[0m \u001b[31m1 will break\u001b[0m: the pump manual in LCLSECSD-1234. Someone should update that ticket later.\r\n"],[3000,"\u001b[H\u001b[2J\u001b[3J"],[1,"\u001b[2mPRACTICE ONLY - made-up data, no Google Drive access\u001b[0m\r\n\r\n\u001b[1m\u001b[36m=== Step 3: Safety copies (preview first) ===\u001b[0m\r\n\r\n"],[611,"\u001b[32m$ \u001b[0m"],[0,"."],[37,"/"],[28,"g"],[30,"d"],[35,"m"],[30," "],[32,"l"],[33,"o"],[31,"g"],[32,"i"],[28,"n"],[28,"-"],[32,"w"],[30,"r"],[30,"i"],[31,"t"],[27,"e"],[27,"r"],[33," "],[34,"p"],[31,"a"],[28,"t"],[33,"@"],[31,"s"],[31,"t"],[29,"a"],[35,"n"],[24,"f"],[28,"o"],[28,"r"],[30,"d"],[28,"."],[27,"e"],[28,"d"],[32,"u"],[32,"\r\n"],[511,"\u001b[32mLogged in (can create copies) as pat@stanford.edu\u001b[0m\r\n"],[0,"\u001b[32m$ \u001b[0m"],[0,"."],[32,"/"],[32,"g"],[32,"d"],[28,"m"],[31," "],[31,"s"],[27,"a"],[28,"f"],[30,"e"],[40,"t"],[29,"y"],[29,"-"],[32,"c"],[31,"o"],[28,"p"],[33,"y"],[69," "],[26,"i"],[35,"n"],[27,"v"],[30,"e"],[29,"n"],[26,"t"],[26,"o"],[27,"r"],[30,"y"],[31,"."],[38,"c"],[27,"s"],[53,"v"],[34," "],[39,"\""],[41,"h"],[29,"t"],[27,"t"],[30,"p"],[31,"s"],[30,":"],[31,"/"],[31,"/"],[31,"d"],[31,"r"],[28,"i"],[31,"v"],[30,"e"],[30,"."],[34,"g"],[36,"o"],[35,"o"],[43,"g"],[28,"l"],[34,"e"],[34,"."],[29,"c"],[31,"o"],[31,"m"],[29,"/"],[31,"d"],[28,"r"],[27,"i"],[27,"v"],[31,"e"],[27,"/"],[31,"f"],[27,"o"],[29,"l"],[31,"d"],[30,"e"],[27,"r"],[28,"s"],[31,"/"],[27,"1"],[29,"B"],[40,"a"],[26,"c"],[26,"k"],[27,"u"],[33,"p"],[28,"F"],[27,"o"],[30,"l"],[32,"d"],[30,"e"],[34,"r"],[26,"\""],[34," "],[33,"-"],[32,"-"],[29,"o"],[32,"w"],[28,"n"],[47,"e"],[27,"r"],[31,"s"],[26," "],[34,"m"],[28,"c"],[31,"h"],[27,"e"],[29,"n"],[30,"@"],[30,"s"],[28,"t"],[32,"a"],[33,"n"],[44,"f"],[33,"o"],[31,"r"],[33,"d"],[69,"."],[30,"e"],[31,"d"],[28,"u"],[31," "],[27,"-"],[29,"-"],[29,"o"],[27,"u"],[37,"t"],[30,"s"],[31,"i"],[29,"d"],[44,"e"],[33,"-"],[37,"o"],[37,"r"],[30,"g"],[32,"\r\n"],[511,"PREVIEW - nothing copied yet. 4 files would be copied:\r\n"],[23,"  LCLS Operations/Procedures/Laser safety training slides mchen@stanford.edu\r\n"],[0,"  LCLS Operations/Shift Schedules/Run 23 schedule (archive) mchen@stanford.edu\r\n"],[0,"  LCLS Operations/Procedures/Vendor pump manual           support@vacuumco.com\r\n"],[0,"  LCLS Operations/Collaborator beamtime request           visiting.scientist@gmail.com\r\n"],[0,"Run again with --yes to copy.\r\n"],[0,"\u001b[33mClaude:\u001b[0m Shall I make these 4 copies?\r\n"],[809,"\u001b[1mYou:\u001b[0m Yes.\r\n"],[809,"\u001b[32m$ \u001b[0m"],[0,"."],[29,"/"],[34,"g"],[31,"d"],[30,"m"],[30," "],[30,"s"],[31,"a"],[31,"f"],[31,"e"],[31,"t"],[32,"y"],[31,"-"],[31,"c"],[35,"o"],[37,"p"],[37,"y"],[30," "],[37,"i"],[41,"n"],[29,"v"],[29,"e"],[31,"n"],[27,"t"],[29,"o"],[31,"r"],[27,"y"],[27,"."],[32,"c"],[30,"s"],[28,"v"],[29," "],[29,"\""],[30,"h"],[29,"t"],[30,"t"],[31,"p"],[29,"s"],[31,":"],[28,"/"],[31,"/"],[30,"d"],[28,"r"],[32,"i"],[29,"v"],[32,"e"],[29,"."],[31,"g"],[31,"o"],[28,"o"],[27,"g"],[37,"l"],[34,"e"],[32,"."],[29,"c"],[32,"o"],[28,"m"],[30,"/"],[34,"d"],[34,"r"],[31,"i"],[34,"v"],[30,"e"],[28,"/"],[30,"f"],[28,"o"],[31,"l"],[31,"d"],[29,"e"],[28,"r"],[28,"s"],[35,"/"],[31,"1"],[29,"B"],[29,"a"],[30,"c"],[32,"k"],[29,"u"],[32,"p"],[35,"F"],[38,"o"],[32,"l"],[31,"d"],[34,"e"],[31,"r"],[29,"\""],[32," "],[33,"-"],[34,"-"],[32,"o"],[30,"w"],[33,"n"],[30,"e"],[41,"r"],[31,"s"],[49," "],[32,"m"],[26,"c"],[30,"h"],[28,"e"],[30,"n"],[34,"@"],[32,"s"],[32,"t"],[33,"a"],[33,"n"],[28,"f"],[27,"o"],[31,"r"],[30,"d"],[32,"."],[30,"e"],[34,"d"],[29,"u"],[30," "],[65,"-"],[33,"-"],[28,"o"],[35,"u"],[28,"t"],[33,"s"],[34,"i"],[33,"d"],[32,"e"],[31,"-"],[30,"o"],[27,"r"],[28,"g"],[30," "],[29,"-"],[28,"-"],[29,"y"],[31,"e"],[31,"s"],[31,"\r\n"],[522,"  \u001b[32mcopied\u001b[0m  LCLS Operations/Procedures/Laser safety training slides\r\n"],[0,"  \u001b[32mcopied\u001b[0m  LCLS Operations/Shift Schedules/Run 23 schedule (archive)\r\n  \u001b[32mcopied\u001b[0m  LCLS Operations/Procedures/Vendor pump manual\r\n  \u001b[32mcopied\u001b[0m  LCLS Operations/Collaborator beamtime request\r\n"],[0,"Log saved to results/inventory-20261105-1430/safety-copies.csv\r\n"],[2442,"\u001b[H\u001b[2J\u001b[3J"],[0,"\u001b[2mPRACTICE ONLY - made-up data, no Google Drive access\u001b[0m\r\n"],[0,"\r\n\u001b[1m\u001b[36m=== Step 4: Request to UIT ===\u001b[0m\r\n"],[0,"\r\n"],[606,"\u001b[33mClaude:\u001b[0m I filled in the template from Appendix D:\r\n"],[829,"  Folder:        LCLS Operations (11 items, 2 folders)\r\n  Destination:   shared drive 'LCLS Operations'\r\n  Owned by others: jlee (2), mchen (2), rgarcia (1)\r\n  Departed owner:  mchen@stanford.edu - please transfer ownership of 2 items\r\n  Outside owners:  2 items (safety copies already made)\r\n  Attached:      summary.json, inventory.csv\r\n"],[2437,"\u001b[H\u001b[2J\u001b[3J"],[0,"\u001b[2mPRACTICE ONLY - made-up data, no Google Drive access\u001b[0m\r\n\r\n"],[0,"\u001b[1m\u001b[36m=== Step 5: Check UIT's work ===\u001b[0m\r\n\r\n"],[610,"\u001b[32m$ \u001b[0m"],[0,"."],[30,"/"],[29,"g"],[33,"d"],[54,"m"],[33," "],[33,"v"],[42,"e"],[30,"r"],[29,"i"],[39,"f"],[33,"y"],[31," "],[33,"r"],[32,"e"],[31,"s"],[30,"u"],[36,"l"],[34,"t"],[37,"s"],[62,"/"],[35,"i"],[34,"n"],[34,"v"],[35,"e"],[44,"n"],[30,"t"],[30,"o"],[34,"r"],[36,"y"],[36,"-"],[37,"2"],[39,"0"],[34,"2"],[33,"6"],[32,"1"],[36,"1"],[34,"0"],[31,"5"],[33,"-"],[29,"1"],[32,"4"],[32,"3"],[30,"0"],[32,"/"],[33,"i"],[35,"n"],[35,"v"],[33,"e"],[33,"n"],[36,"t"],[31,"o"],[30,"r"],[31,"y"],[33,"."],[32,"c"],[33,"s"],[33,"v"],[36," "],[33,"\""],[34,"h"],[34,"t"],[29,"t"],[34,"p"],[37,"s"],[34,":"],[32,"/"],[28,"/"],[27,"d"],[29,"r"],[31,"i"],[30,"v"],[29,"e"],[32,"."],[29,"g"],[29,"o"],[31,"o"],[35,"g"],[30,"l"],[33,"e"],[31,"."],[34,"c"],[36,"o"],[31,"m"],[30,"/"],[32,"d"],[32,"r"],[32,"i"],[34,"v"],[36,"e"],[27,"/"],[36,"f"],[37,"o"],[36,"l"],[33,"d"],[38,"e"],[32,"r"],[33,"s"],[33,"/"],[32,"0"],[33,"A"],[28,"S"],[32,"h"],[29,"a"],[27,"r"],[30,"e"],[28,"d"],[31,"D"],[34,"r"],[33,"i"],[33,"v"],[31,"e"],[33,"\""],[35,"\r\n"],[522,"{ \"checked\": 11, \"by_status\": { \"still in My Drive\": 11 }, \"owner_changed\": 2 }\r\n"],[1,"\u001b[33mClaude:\u001b[0m Ownership of mchen's items has moved, as UIT promised. Nothing is in the shared drive yet, which is expected before step 6.\r\n"],[3000,"\u001b[H\u001b[2J\u001b[3J"],[1,"\u001b[2mPRACTICE ONLY - made-up data, no Google Drive access\u001b[0m\r\n"],[0,"\r\n\u001b[1m\u001b[36m=== Step 6: Move the folder (you click, Appendix E) ===\u001b[0m\r\n"],[0,"\r\n"],[609,"\u001b[33mClaude:\u001b[0m 1. In My Drive, right-click 'LCLS Operations' > Organize > Move.\r\n"],[805,"\u001b[33mClaude:\u001b[0m 2. Choose Shared drives > LCLS Operations > Move > Move (confirm).\r\n"],[808,"\u001b[33mClaude:\u001b[0m 3. Wait until Drive says the move is complete.\r\n"],[809,"\u001b[1mYou:\u001b[0m Done.\r\n"],[3000,"\u001b[H\u001b[2J\u001b[3J"],[0,"\u001b[2mPRACTICE ONLY - made-up data, no Google Drive access\u001b[0m\r\n\r\n"],[0,"\u001b[1m\u001b[36m=== Step 7: Give people access again ===\u001b[0m\r\n\r\n"],[610,"\u001b[33mClaude:\u001b[0m From folder-sharing.csv, add these as shared drive members:\r\n"],[824,"  lcls-ops@slac.stanford.edu          group    (was writer on LCLS Operations)\r\n  visiting.scientist@gmail.com        user     (was reader on LCLS Operations)\r\n  jlee@stanford.edu                   user     (was writer on LCLS Operations/Procedures)\r\n  stanford.edu                        domain   (was reader on LCLS Operations/Procedures)\r\n"],[2434,"\u001b[H\u001b[2J\u001b[3J"],[0,"\u001b[2mPRACTICE ONLY - made-up data, no Google Drive access\u001b[0m\r\n\r\n"],[0,"\u001b[1m\u001b[36m=== Step 8: Final check ===\u001b[0m\r\n\r\n"],[611,"\u001b[32m$ \u001b[0m."],[28,"/"],[25,"g"],[33,"d"],[31,"m"],[30," "],[28,"v"],[31,"e"],[33,"r"],[28,"i"],[31,"f"],[30,"y"],[31," "],[30,"r"],[27,"e"],[33,"s"],[30,"u"],[30,"l"],[29,"t"],[29,"s"],[46,"/"],[30,"i"],[30,"n"],[30,"v"],[31,"e"],[29,"n"],[26,"t"],[31,"o"],[32,"r"],[31,"y"],[27,"-"],[31,"2"],[30,"0"],[30,"2"],[28,"6"],[26,"1"],[31,"1"],[31,"0"],[26,"5"],[29,"-"],[29,"1"],[29,"4"],[26,"3"],[29,"0"],[31,"/"],[28,"i"],[31,"n"],[31,"v"],[29,"e"],[27,"n"],[28,"t"],[27,"o"],[27,"r"],[28,"y"],[27,"."],[28,"c"],[31,"s"],[29,"v"],[28," "],[34,"\""],[32,"h"],[33,"t"],[31,"t"],[27,"p"],[34,"s"],[34,":"],[30,"/"],[29,"/"],[36,"d"],[31,"r"],[31,"i"],[29,"v"],[28,"e"],[30,"."],[28,"g"],[32,"o"],[30,"o"],[39,"g"],[45,"l"],[29,"e"],[31,"."],[31,"c"],[31,"o"],[33,"m"],[31,"/"],[33,"d"],[24,"r"],[32,"i"],[34,"v"],[28,"e"],[32,"/"],[32,"f"],[28,"o"],[29,"l"],[32,"d"],[30,"e"],[40,"r"],[34,"s"],[26,"/"],[27,"0"],[37,"A"],[36,"S"],[27,"h"],[31,"a"],[31,"r"],[27,"e"],[29,"d"],[31,"D"],[34,"r"],[31,"i"],[31,"v"],[28,"e"],[31,"\""],[34,"\r\n"],[521,"{ \"checked\": 11, \"by_status\": { \"in shared drive\": 8, \"still in My Drive\": 3 }, \"owner_changed\": 0 }\r\n"],[0,"\r\n"],[9,"  \u001b[32min shared drive   \u001b[0m LCLS Operations/Contacts list\r\n  \u001b[32min shared drive   \u001b[0m LCLS Operations/Ops meeting notes\r\n"],[0,"  \u001b[32min shared drive   \u001b[0m LCLS Operations/Procedures\r\n  \u001b[32min shared drive   \u001b[0m LCLS Operations/Procedures/Beamline startup checklist\r\n  \u001b[32min shared drive   \u001b[0m LCLS Operations/Procedures/Detector cooldown\r\n"],[0,"  \u001b[32min shared drive   \u001b[0m LCLS Operations/Procedures/Laser safety training slides\r\n"],[0,"  \u001b[32min shared drive   \u001b[0m LCLS Operations/Shift Schedules\r\n"],[0,"  \u001b[32min shared drive   \u001b[0m LCLS Operations/Shift Schedules/Run 24 schedule\r\n"],[0,"  \u001b[31mstill in My Drive \u001b[0m LCLS Operations/Collaborator beamtime request\r\n"],[0,"  \u001b[31mstill in My Drive \u001b[0m LCLS Operations/Procedures/Vendor pump manual\r\n  \u001b[31mstill in My Drive \u001b[0m LCLS Operations/Shift Schedules/Run 23 schedule (archive)\r\n"],[0,"\r\n"],[0,"\u001b[33mClaude:\u001b[0m The 2 outside-Stanford files are expected to stay behind.\r\n"],[809,"\u001b[33mClaude:\u001b[0m \u001b[31m'Run 23 schedule (archive)' did not move\u001b[0m: follow up with UIT. The safety copy from step 3 protects it.\r\n"],[815,"\u001b[33mClaude:\u001b[0m Everything else is in the shared drive. Keep results/ as the record.\r\n"],[3000,"\r\n"],[0,"\u001b[1mEnd of practice walkthrough.\u001b[0m\r\n"]]</script>
+</section>
+
 <section id="checklist">
   <h2>Your checklist</h2>
-  <p class="prose">Tags show who acts: <span class="tag you">You</span> means a few clicks in Google Drive, <span class="tag kit">Claude</span> means ask Claude in plain words (an example request is in italics): it runs the toolkit and explains the result, <span class="tag uit">UIT</span> means Stanford's Google administrators. Steps 0 to 3 need no one's permission and can start today.</p>
+  <p class="prose">Tags show who acts: <span class="tag you">You</span> means a few clicks in Google Drive, <span class="tag kit">Claude</span> means ask Claude in plain words (an example request is in italics): it runs the toolkit and explains the result, <span class="tag uit">UIT</span> means Stanford's Google administrators. Steps 0 to 3 need no one's permission and can start today. Not sure what a step looks like? It is in the <a href="#see-it">75-second walkthrough</a> above.</p>
   <div class="steps">
 
     <div class="step">
@@ -505,6 +538,71 @@ Attachments: summary.json, inventory.csv</pre>
     } catch (e) {
       selectInstead();
     }
+  });
+})();
+</script>
+
+<script>
+(function () {
+  var root = document.getElementById("practice-player");
+  var dataEl = document.getElementById("practice-recording");
+  if (!root || !dataEl) return;
+  var frames = JSON.parse(dataEl.textContent);
+  var screen = root.querySelector(".screen");
+  var playBtn = root.querySelector('[data-act="play"]');
+  var speedBtn = root.querySelector('[data-act="speed"]');
+  var bar = root.querySelector("progress");
+  var timeEl = root.querySelector(".time");
+  var total = frames.reduce(function (s, f) { return s + f[0]; }, 0);
+  var speeds = [1, 2, 4], speedIx = 0, pos = 0, elapsed = 0, timer = null, playing = false;
+  var html = "", cls = {};
+  function fmt(ms) { var s = Math.floor(ms / 1000); return Math.floor(s / 60) + ":" + ("0" + s % 60).slice(-2); }
+  function esc(t) { return t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function classes() { return Object.keys(cls).filter(function (k) { return cls[k]; }).join(" "); }
+  function write(text) {
+    var re = /\x1b\[([0-9;]*)([A-Za-z])|([^\x1b]+)/g, m;
+    while ((m = re.exec(text))) {
+      if (m[3] !== undefined) {
+        var t = esc(m[3].replace(/\r\n/g, "\n").replace(/\r/g, ""));
+        var c = classes();
+        html += c ? '<span class="' + c + '">' + t + "</span>" : t;
+      } else if (m[2] === "J" && m[1] === "2") {
+        html = "";
+      } else if (m[2] === "m") {
+        (m[1] || "0").split(";").forEach(function (n) {
+          if (n === "0" || n === "") cls = {};
+          else if (n === "1") cls.b = true;
+          else if (n === "2") cls.d = true;
+          else if (/^3[0-7]$/.test(n)) { for (var k in cls) if (/^c3/.test(k)) delete cls[k]; cls["c" + n] = true; }
+        });
+      }
+    }
+  }
+  function render() {
+    screen.innerHTML = html;
+    screen.scrollTop = screen.scrollHeight;
+    bar.value = elapsed;
+    timeEl.textContent = fmt(elapsed) + " / " + fmt(total);
+  }
+  function step() {
+    if (pos >= frames.length) { stop(); playBtn.textContent = "Play again"; return; }
+    write(frames[pos][1]); pos++; render();
+    var next = pos < frames.length ? frames[pos][0] : 0;
+    elapsed += next;
+    timer = setTimeout(step, next / speeds[speedIx]);
+  }
+  function stop() { playing = false; clearTimeout(timer); playBtn.textContent = "Play"; }
+  function reset() { stop(); pos = 0; elapsed = 0; html = ""; cls = {}; render(); }
+  playBtn.addEventListener("click", function () {
+    if (playing) { stop(); playBtn.textContent = "Resume"; return; }
+    if (pos >= frames.length) reset();
+    playing = true; playBtn.textContent = "Pause"; step();
+  });
+  root.querySelector('[data-act="restart"]').addEventListener("click", function () {
+    reset(); playing = true; playBtn.textContent = "Pause"; step();
+  });
+  speedBtn.addEventListener("click", function () {
+    speedIx = (speedIx + 1) % speeds.length; speedBtn.textContent = "Speed " + speeds[speedIx] + "×";
   });
 })();
 </script>

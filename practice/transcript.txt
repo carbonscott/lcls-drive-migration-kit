@@ -1,0 +1,146 @@
+PRACTICE ONLY - made-up data, no Google Drive access
+
+=== Step 0: Create the shared drive ===
+
+Claude: In the Drive web page: Shared drives > New > name it 'LCLS Operations'.
+Claude: Nothing to run here. Copy the new shared drive's link for steps 5 and 8.
+
+PRACTICE ONLY - made-up data, no Google Drive access
+
+=== Step 1: Take the inventory (read-only) ===
+
+$ ./gdm login pat@stanford.edu
+A browser tab opened. Choose pat@stanford.edu, tick Google Drive, click Continue.
+Logged in READ-ONLY as pat@stanford.edu
+$ ./gdm inventory "https://drive.google.com/drive/folders/1AaRoot"
+Reading 'LCLS Operations' as pat@stanford.edu (read-only)...
+  4 items so far
+  9 items so far
+  11 items so far
+{
+  "folder": "LCLS Operations",
+  "folder_id": "1AaRoot",
+  "read_as": "pat@stanford.edu",
+  "items": 11,
+  "folders": 2,
+  "by_label": {"yours": 4, "same-org": 5, "outside-org": 2},
+  "items_not_owned_by_you_per_owner": {
+    "jlee@stanford.edu": 2,
+    "mchen@stanford.edu": 2,
+    "rgarcia@stanford.edu": 1,
+    "support@vacuumco.com": 1,
+    "visiting.scientist@gmail.com": 1
+  },
+  "people_and_groups_with_folder_access": [
+    "jlee@stanford.edu", "lcls-ops@slac.stanford.edu", "pat@stanford.edu",
+    "stanford.edu", "visiting.scientist@gmail.com"
+  ]
+}
+
+Saved to results/inventory-20261105-1430/
+Claude: 11 items: 4 are yours, 5 belong to colleagues, 2 belong to people outside Stanford.
+Claude: Which of jlee, mchen and rgarcia have left SLAC?
+You: mchen left last year.
+$ cat results/departed-owners.txt
+mchen@stanford.edu
+
+PRACTICE ONLY - made-up data, no Google Drive access
+
+=== Step 2: Where are these files linked from? ===
+
+$ confluence-search whoami
+Logged in to Confluence as pat
+$ confluence-search 'text ~ "docs.google.com" OR text ~ "drive.google.com"'
+  PCDS / Beamline startup        -> 1BbStartup     (Beamline startup checklist)  same-org
+  PCDS / Shift handover          -> 1AaRun24Sched  (Run 24 schedule)             yours
+  PCDS / Detector notes          -> 1BbCooldown    (Detector cooldown)           same-org
+$ jira-search 'text ~ "drive.google.com"'
+  LCLSECSD-1234  Vacuum pump service  -> 1CcPumpManual (Vendor pump manual)  outside-org
+Claude: 3 links will keep working after the move.
+Claude: 1 will break: the pump manual in LCLSECSD-1234. Someone should update that ticket later.
+
+PRACTICE ONLY - made-up data, no Google Drive access
+
+=== Step 3: Safety copies (preview first) ===
+
+$ ./gdm login-writer pat@stanford.edu
+Logged in (can create copies) as pat@stanford.edu
+$ ./gdm safety-copy inventory.csv "https://drive.google.com/drive/folders/1BackupFolder" --owners mchen@stanford.edu --outside-org
+PREVIEW - nothing copied yet. 4 files would be copied:
+  LCLS Operations/Procedures/Laser safety training slides mchen@stanford.edu
+  LCLS Operations/Shift Schedules/Run 23 schedule (archive) mchen@stanford.edu
+  LCLS Operations/Procedures/Vendor pump manual           support@vacuumco.com
+  LCLS Operations/Collaborator beamtime request           visiting.scientist@gmail.com
+Run again with --yes to copy.
+Claude: Shall I make these 4 copies?
+You: Yes.
+$ ./gdm safety-copy inventory.csv "https://drive.google.com/drive/folders/1BackupFolder" --owners mchen@stanford.edu --outside-org --yes
+  copied  LCLS Operations/Procedures/Laser safety training slides
+  copied  LCLS Operations/Shift Schedules/Run 23 schedule (archive)
+  copied  LCLS Operations/Procedures/Vendor pump manual
+  copied  LCLS Operations/Collaborator beamtime request
+Log saved to results/inventory-20261105-1430/safety-copies.csv
+
+PRACTICE ONLY - made-up data, no Google Drive access
+
+=== Step 4: Request to UIT ===
+
+Claude: I filled in the template from Appendix D:
+  Folder:        LCLS Operations (11 items, 2 folders)
+  Destination:   shared drive 'LCLS Operations'
+  Owned by others: jlee (2), mchen (2), rgarcia (1)
+  Departed owner:  mchen@stanford.edu - please transfer ownership of 2 items
+  Outside owners:  2 items (safety copies already made)
+  Attached:      summary.json, inventory.csv
+
+PRACTICE ONLY - made-up data, no Google Drive access
+
+=== Step 5: Check UIT's work ===
+
+$ ./gdm verify results/inventory-20261105-1430/inventory.csv "https://drive.google.com/drive/folders/0ASharedDrive"
+{ "checked": 11, "by_status": { "still in My Drive": 11 }, "owner_changed": 2 }
+Claude: Ownership of mchen's items has moved, as UIT promised. Nothing is in the shared drive yet, which is expected before step 6.
+
+PRACTICE ONLY - made-up data, no Google Drive access
+
+=== Step 6: Move the folder (you click, Appendix E) ===
+
+Claude: 1. In My Drive, right-click 'LCLS Operations' > Organize > Move.
+Claude: 2. Choose Shared drives > LCLS Operations > Move > Move (confirm).
+Claude: 3. Wait until Drive says the move is complete.
+You: Done.
+
+PRACTICE ONLY - made-up data, no Google Drive access
+
+=== Step 7: Give people access again ===
+
+Claude: From folder-sharing.csv, add these as shared drive members:
+  lcls-ops@slac.stanford.edu          group    (was writer on LCLS Operations)
+  visiting.scientist@gmail.com        user     (was reader on LCLS Operations)
+  jlee@stanford.edu                   user     (was writer on LCLS Operations/Procedures)
+  stanford.edu                        domain   (was reader on LCLS Operations/Procedures)
+
+PRACTICE ONLY - made-up data, no Google Drive access
+
+=== Step 8: Final check ===
+
+$ ./gdm verify results/inventory-20261105-1430/inventory.csv "https://drive.google.com/drive/folders/0ASharedDrive"
+{ "checked": 11, "by_status": { "in shared drive": 8, "still in My Drive": 3 }, "owner_changed": 0 }
+
+  in shared drive    LCLS Operations/Contacts list
+  in shared drive    LCLS Operations/Ops meeting notes
+  in shared drive    LCLS Operations/Procedures
+  in shared drive    LCLS Operations/Procedures/Beamline startup checklist
+  in shared drive    LCLS Operations/Procedures/Detector cooldown
+  in shared drive    LCLS Operations/Procedures/Laser safety training slides
+  in shared drive    LCLS Operations/Shift Schedules
+  in shared drive    LCLS Operations/Shift Schedules/Run 24 schedule
+  still in My Drive  LCLS Operations/Collaborator beamtime request
+  still in My Drive  LCLS Operations/Procedures/Vendor pump manual
+  still in My Drive  LCLS Operations/Shift Schedules/Run 23 schedule (archive)
+
+Claude: The 2 outside-Stanford files are expected to stay behind.
+Claude: 'Run 23 schedule (archive)' did not move: follow up with UIT. The safety copy from step 3 protects it.
+Claude: Everything else is in the shared drive. Keep results/ as the record.
+
+End of practice walkthrough.

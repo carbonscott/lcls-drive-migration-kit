@@ -1,0 +1,12 @@
+status,path,type,owner_before,owner_now,owner_changed,id,link
+in shared drive,LCLS Operations/Contacts list,spreadsheet,rgarcia@stanford.edu,(shared drive),,1BbContacts,https://docs.google.com/spreadsheets/d/1BbContacts
+in shared drive,LCLS Operations/Ops meeting notes,document,pat@stanford.edu,(shared drive),,1AaOpsNotes,https://docs.google.com/document/d/1AaOpsNotes
+in shared drive,LCLS Operations/Procedures,folder,pat@stanford.edu,(shared drive),,1AaFolderProc,https://drive.google.com/drive/folders/1AaFolderProc
+in shared drive,LCLS Operations/Procedures/Beamline startup checklist,document,jlee@stanford.edu,(shared drive),,1BbStartup,https://docs.google.com/document/d/1BbStartup
+in shared drive,LCLS Operations/Procedures/Detector cooldown,document,jlee@stanford.edu,(shared drive),,1BbCooldown,https://docs.google.com/document/d/1BbCooldown
+in shared drive,LCLS Operations/Procedures/Laser safety training slides,presentation,mchen@stanford.edu,(shared drive),,1BbLaserSlides,https://docs.google.com/presentation/d/1BbLaserSlides
+in shared drive,LCLS Operations/Shift Schedules,folder,pat@stanford.edu,(shared drive),,1AaFolderShift,https://drive.google.com/drive/folders/1AaFolderShift
+in shared drive,LCLS Operations/Shift Schedules/Run 24 schedule,spreadsheet,pat@stanford.edu,(shared drive),,1AaRun24Sched,https://docs.google.com/spreadsheets/d/1AaRun24Sched
+still in My Drive,LCLS Operations/Collaborator beamtime request,document,visiting.scientist@gmail.com,visiting.scientist@gmail.com,,1CcBeamReq,https://docs.google.com/document/d/1CcBeamReq
+still in My Drive,LCLS Operations/Procedures/Vendor pump manual,pdf,support@vacuumco.com,support@vacuumco.com,,1CcPumpManual,https://drive.google.com/file/d/1CcPumpManual
+still in My Drive,LCLS Operations/Shift Schedules/Run 23 schedule (archive),spreadsheet,mchen@stanford.edu,mchen@stanford.edu,,1BbRun23,https://docs.google.com/spreadsheets/d/1BbRun23

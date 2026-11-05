@@ -1,0 +1,19 @@
+{
+  "folder": "LCLS Operations",
+  "folder_id": "1AaRoot",
+  "read_as": "pat@stanford.edu",
+  "items": 11,
+  "folders": 2,
+  "by_label": {"yours": 4, "same-org": 5, "outside-org": 2},
+  "items_not_owned_by_you_per_owner": {
+    "jlee@stanford.edu": 2,
+    "mchen@stanford.edu": 2,
+    "rgarcia@stanford.edu": 1,
+    "support@vacuumco.com": 1,
+    "visiting.scientist@gmail.com": 1
+  },
+  "people_and_groups_with_folder_access": [
+    "jlee@stanford.edu", "lcls-ops@slac.stanford.edu", "pat@stanford.edu",
+    "stanford.edu", "visiting.scientist@gmail.com"
+  ]
+}
